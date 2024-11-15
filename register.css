@@ -1,0 +1,108 @@
+/* Basic reset and layout styles */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #2c3e50, #4ca1af); /* Smooth gradient background */
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+}
+
+.message-box {
+    background: #ffffff;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    animation: scaleIn 1s ease;
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.message-box .icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+.message-box h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    animation: fadeIn 1.5s ease;
+}
+
+.message-box p {
+    color: #555;
+    font-size: 18px;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.message-box a {
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #2c3e50;
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.message-box a:hover {
+    background-color: #1a252f;
+    transform: scale(1.05);
+}
+
+.success {
+    color: #2c3e50;
+}
+
+.error {
+    color: #dc3545;
+}
+
+.message-box .confetti {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.message-box .confetti span {
+    position: absolute;
+    background-color: #ffdf00;
+    width: 12px;
+    height: 12px;
+    animation: fall 4s infinite ease-in-out;
+}
+
+@keyframes fall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(500px) rotate(360deg); }
+}
+
+.confetti span:nth-child(1) { left: 20%; animation-duration: 3s; animation-delay: 0.2s; background-color: #ff9f43; }
+.confetti span:nth-child(2) { left: 50%; animation-duration: 2.5s; animation-delay: 0.4s; background-color: #ff6f61; }
+.confetti span:nth-child(3) { left: 80%; animation-duration: 3.5s; animation-delay: 0.1s; background-color: #f3a683; }
+.confetti span:nth-child(4) { left: 30%; animation-duration: 4s; animation-delay: 0.6s; background-color: #ffdf00; }
+.confetti span:nth-child(5) { left: 70%; animation-duration: 2s; animation-delay: 0.3s; background-color: #ff9f43; }
+
+/* Animation for the title */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
