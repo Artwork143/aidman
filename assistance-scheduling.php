@@ -11,6 +11,7 @@ require 'db_connect.php'; ?>
     <link rel="stylesheet" href="assistance.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="css/admin-dashboard.css"> <!-- Updated link -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .notification-bell {
@@ -277,14 +278,41 @@ require 'db_connect.php'; ?>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Modal for Editing Assistance -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <span class="close" id="close-edit-modal">&times;</span>
-            <h2>Edit Resident</h2>
-            <p>Are you sure you want to edit the details of this resident?</p>
-            <button class="btn">Confirm</button>
-            <button class="btn" id="cancel-edit">Cancel</button>
+            <h2>Edit Assistance</h2>
+            <form id="edit-form" method="POST" action="edit_assistance.php">
+                <input type="hidden" name="resident_id" id="edit-resident-id">
+
+                <!-- Pickup Date -->
+                <label for="edit-pickup-date">Pickup Date:</label>
+                <input type="date" name="pickup_date" id="edit-pickup-date" required>
+
+                <!-- Inventory Items and Quantities -->
+                <h3>Supplies</h3>
+                <?php
+                // Fetch inventory items with their units
+                require 'db_connect.php';
+                $sql = "SELECT id, name, quantity, unit FROM inventory";
+                $result = $conn->query($sql);
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<div>";
+                        echo "<label for='edit-item_" . $row['id'] . "'>" . $row['name'] . " (Available: " . $row['quantity'] . " " . $row['unit'] . ")</label>";
+                        echo "<input type='number' id='edit-item_" . $row['id'] . "' name='items[" . $row['id'] . "]' min='0' max='" . $row['quantity'] . "'>";
+                        echo "<span>" . $row['unit'] . "</span>";
+                        echo "</div>";
+                    }
+                }
+                $conn->close();
+                ?>
+
+                <button type="submit" class="btn">Update</button>
+                <button type="button" class="btn" id="cancel-edit">Cancel</button>
+            </form>
         </div>
     </div>
 
@@ -303,8 +331,62 @@ require 'db_connect.php'; ?>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script src="js/admin-dashboard.js"></script>
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const editButtons = document.querySelectorAll(".btn-edit");
+            const editModal = document.getElementById("edit-modal");
+            const closeEditModal = document.getElementById("close-edit-modal");
+            const editForm = document.getElementById("edit-form");
+
+            // Handle Edit button click
+            editButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    const residentId = this.dataset.residentId;
+
+                    // Populate the modal with existing data
+                    fetch(`get_resident_assistance.php?resident_id=${residentId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById("edit-resident-id").value = residentId;
+                            document.getElementById("edit-pickup-date").value = data.pickup_date;
+
+                            // Populate inventory item quantities
+                            for (const [itemId, quantity] of Object.entries(data.items)) {
+                                const itemInput = document.getElementById(`edit-item_${itemId}`);
+                                if (itemInput) {
+                                    itemInput.value = quantity;
+                                }
+                            }
+
+                            // Show the modal
+                            editModal.style.display = "block";
+                        })
+                        .catch(error => {
+                            console.error("Error fetching resident data:", error);
+                        });
+                });
+            });
+
+            // Close modal
+            closeEditModal.addEventListener("click", function() {
+                editModal.style.display = "none";
+            });
+
+            // Cancel button closes the modal
+            document.getElementById("cancel-edit").addEventListener("click", function() {
+                editModal.style.display = "none";
+            });
+
+            // Close modal when clicking outside of it
+            window.addEventListener("click", function(event) {
+                if (event.target === editModal) {
+                    editModal.style.display = "none";
+                }
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             // Notification Dropdown
             const notificationBell = document.getElementById('notification-bell');
@@ -496,6 +578,57 @@ require 'db_connect.php'; ?>
                 deleteModal.style.display = "none";
                 document.getElementById('pageContent').classList.remove('blur');
             }
+        });
+
+        // Submit the edit form and show a Swal.fire success message upon successful update
+        document.getElementById('edit-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Create a FormData object to send the form data
+            let formData = new FormData(this);
+
+            // Send the form data via AJAX (fetch)
+            fetch('edit_assistance.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message with Swal.fire
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: data.success,
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Optionally, close the modal or reload the page
+                                document.getElementById('edit-modal').style.display = 'none';
+                                document.getElementById('pageContent').classList.remove('blur');
+                                // Optionally, reload the page to reflect the updates
+                                // location.reload();
+                            }
+                        });
+                    } else if (data.error) {
+                        // Handle error response from PHP
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: data.error,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Something went wrong. Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                });
         });
     </script>
 </body>

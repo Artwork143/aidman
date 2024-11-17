@@ -140,7 +140,7 @@ $conn->close();
                 <div class="header-right">
                     <!-- Notification Bell -->
                     <div class="notification-bell" id="notification-bell">
-                        <i class="fas fa-bell" style="color: <?php echo $has_new_notifications ? 'red' : 'black'; ?>;"></i>
+                        <i class="fas fa-bell" style="color: <?php echo $has_new_notifications ? 'red' : '#555'; ?>;"></i>
                         <?php if ($has_new_notifications): ?>
                             <span class="badge"><?php echo count($notifications); ?></span>
                         <?php endif; ?>
