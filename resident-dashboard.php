@@ -136,7 +136,7 @@ $conn->close();
         </aside>
         <main>
             <header>
-                <h2></h2>
+                <h2>Resident</h2>
                 <div class="header-right">
                     <!-- Notification Bell -->
                     <div class="notification-bell" id="notification-bell">

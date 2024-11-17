@@ -18,17 +18,120 @@ if ($conn->connect_error) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .inventory-container {
+            padding: 15px;
+        }
+
+        .inventory-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .inven-btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+
+        .inventory-item {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .inventory-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .inventory-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .inventory-details {
+            flex: 1;
+        }
+
+        .alert {
+            margin-top: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-bell .badge {
+            position: absolute;
+            top: -10px;
+            right: -12px;
+            height: 7px;
+            width: 7px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            border: 2px solid white;
+            padding: 5px;
+            font-size: 12px;
+            padding-bottom: 10px;
+        }
+
+        .dropdown-menu.notifications {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background-color: white;
+            border: 1px solid #ddd;
+            width: 300px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .dropdown-menu.notifications.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
     <link rel="stylesheet" href="css/admin-dashboard.css"> <!-- Updated link -->
     <link rel="stylesheet" href="css/inventory-modal.css"> <!-- Added inventory modal CSS link -->
     <!-- Link to Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
     <div class="container">
         <aside class="sidebar">
@@ -39,8 +142,8 @@ if ($conn->connect_error) {
             </div>
             <nav>
                 <ul>
-                    <li ><a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i></i> Dashboard</a></li>
-                    <li ><a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a></li>
+                    <li><a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i></i> Dashboard</a></li>
+                    <li><a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a></li>
                     <li class="nav-item active"><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
                     <li class="arrow-dropdown">
                         <div class="arrow-dropdown-toggle" id="account-control-link">
@@ -60,10 +163,56 @@ if ($conn->connect_error) {
             <header>
                 <h2>Administrator</h2>
                 <div class="header-right">
-                    <i class="fas fa-bell"></i>
-                    <div class="dropdown">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell" id="notification-bell">
+                        <?php
+                        // Fetch low-stock inventory items
+                        require 'db_connect.php';
+                        $sql = "SELECT name, quantity, threshold_quantity FROM inventory WHERE quantity <= threshold_quantity";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        $lowStockNotifications = [];
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                $lowStockNotifications[] = [
+                                    'name' => $row['name'],
+                                    'quantity' => $row['quantity'],
+                                    'threshold' => $row['threshold_quantity'],
+                                ];
+                            }
+                        }
+
+                        $hasLowStock = !empty($lowStockNotifications);
+                        ?>
+                        <i class="fas fa-bell" style="color: <?php echo $hasLowStock ? 'red' : '#555'; ?>;"></i>
+                        <?php if ($hasLowStock): ?>
+                            <span class="badge"><?php echo count($lowStockNotifications); ?></span>
+                        <?php endif; ?>
+                        <div class="dropdown-menu notifications" id="notification-dropdown">
+                            <?php if ($hasLowStock): ?>
+                                <?php foreach ($lowStockNotifications as $notification): ?>
+                                    <div class="dropdown-item" onclick="location.href='inventory-dashboard.php';" style="cursor: pointer;">
+                                        <p>
+                                            <strong>Low Stock Alert:</strong> <?php echo htmlspecialchars($notification['name']); ?><br>
+                                            Current Quantity: <?php echo htmlspecialchars($notification['quantity']); ?><br>
+                                            Restock Threshold: <?php echo htmlspecialchars($notification['threshold']); ?>
+                                        </p>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="dropdown-item">
+                                    <p>No low-stock alerts</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Profile Dropdown -->
+                    <div class="profile-dropdown" id="profile-dropdown">
                         <i class="fas fa-user-circle"></i>
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu profile-menu" id="profile-menu">
                             <a href="account-information.php" id="view-profile" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 <span>Account Info</span>
@@ -75,41 +224,58 @@ if ($conn->connect_error) {
                             <a href="login.php" id="logout-link" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
-                            </a>                            
+                            </a>
                         </div>
                     </div>
                 </div>
             </header>
 
             <div class="inventory-container">
-                <button id="inven-add-supplies-btn" class="inven-btn inven-center-page">Add Supplies</button>
+                <div class="inventory-header">
+                    <button id="inven-add-supplies-btn" class="inven-btn">Add Supplies</button>
+                </div>
                 <div class="inventory-list" id="inven-inventory-list">
-                <?php
-                // Fetch inventory items from the database
-                require 'db_connect.php';
-                $sql = "SELECT * FROM inventory";
-                $result = $conn->query($sql);
+                    <?php
+                    // Fetch inventory items from the database
+                    require 'db_connect.php';
+                    $sql = "SELECT id, name, quantity, threshold_quantity, unit, image_path 
+                FROM inventory 
+                ORDER BY quantity ASC"; // Order by quantity to display low-stock items first
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
 
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<div class="inventory-item">';
-                        echo '<div class="inventory-card">';
-                        if ($row['image_path']) {
-                            echo '<img src="' . $row['image_path'] . '" alt="' . $row['name'] . '" class="inventory-image">';
+                    if ($result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                            // Display inventory item
+                            echo '<div class="inventory-item">';
+                            echo '<div class="inventory-card">';
+                            if ($row['image_path']) {
+                                echo '<img src="' . htmlspecialchars($row['image_path']) . '" alt="' . htmlspecialchars($row['name']) . '" class="inventory-image">';
+                            }
+                            echo '<div class="inventory-details">';
+                            echo '<h4 class="inventory-name">' . htmlspecialchars($row['name']) . '</h4>';
+                            echo '<p class="inventory-info"><strong>Quantity:</strong> ' . htmlspecialchars($row['quantity']) . ' ' . htmlspecialchars($row['unit']) . '</p>';
+                            echo '<div class="inventory-actions">';
+                            echo '<button class="edit-supply-btn" data-id="' . htmlspecialchars($row['id']) . '" title="Edit Item">Edit</button>';
+                            echo '<button class="delete-supply-btn" data-id="' . htmlspecialchars($row['id']) . '" title="Delete Item">Delete</button>';
+                            echo '</div>'; // .inventory-actions
+
+                            // Add alert for low stock directly inside the card
+                            if ($row['quantity'] <= $row['threshold_quantity']) {
+                                echo '<div class="alert alert-warning alert-dismissible">';
+                                echo htmlspecialchars($row['name']) . ' is low on stock. Please restock.';
+                                echo '</div>';
+                            }
+
+                            echo '</div>'; // .inventory-details
+                            echo '</div>'; // .inventory-card
+                            echo '</div>'; // .inventory-item
                         }
-                        echo '<div class="inventory-details">';
-                        echo '<h4 class="inventory-name">' . $row['name'] . '</h4>';
-                        echo '<p class="inventory-info" data-expiry-date="' . $row['expiry_date'] . '"><strong>Quantity:</strong> ' . $row['quantity'] . ' ' . $row['unit'] . '</p>';
-                        echo '<div class="inventory-actions">';
-                        echo '<button class="edit-supply-btn" data-id="' . $row['id'] . '">Edit</button>';
-                        echo '<button class="delete-supply-btn" data-id="' . $row['id'] . '">Delete</button>';
-                        echo '</div>'; // .inventory-actions
-                        echo '</div>'; // .inventory-details
-                        echo '</div>'; // .inventory-card
-                        echo '</div>'; // .inventory-item
+                    } else {
+                        echo '<p>No inventory items found.</p>';
                     }
-                }
-                ?>
+                    ?>
                 </div>
             </div>
 
@@ -166,22 +332,101 @@ if ($conn->connect_error) {
     </div>
 
     <!-- Delete Confirmation Modal -->
-<div id="inven-delete-supply">
-    <div class="inven-delete-content">
-        <span class="inven-close-delete">&times;</span>
-        <h2>Delete Supply</h2>
-        <p>Are you sure you want to delete this supply?</p>
-        <form id="delete-supply-form" action="delete_supply.php" method="GET">
-            <input type="hidden" id="delete-supply-id" name="id">
-            <button type="submit" class="delete-confirm-btn">Yes, Delete</button>
-            <button type="button" class="delete-cancel-btn"  class="delete-cancel-btn">Cancel</button>
-        </form>
+    <div id="inven-delete-supply">
+        <div class="inven-delete-content">
+            <span class="inven-close-delete">&times;</span>
+            <h2>Delete Supply</h2>
+            <p>Are you sure you want to delete this supply?</p>
+            <form id="delete-supply-form" action="delete_supply.php" method="GET">
+                <input type="hidden" id="delete-supply-id" name="id">
+                <button type="submit" class="delete-confirm-btn">Yes, Delete</button>
+                <button type="button" class="delete-cancel-btn" class="delete-cancel-btn">Cancel</button>
+            </form>
+        </div>
     </div>
-</div>
 
-    
+
     <script src="js/admin-dashboard.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notification Dropdown
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('show');
+
+                    // Close profile menu if open
+                    const profileMenu = document.getElementById('profile-menu');
+                    if (profileMenu && profileMenu.classList.contains('show')) {
+                        profileMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Profile Dropdown
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileMenu = document.getElementById('profile-menu');
+            if (profileDropdown) {
+                profileDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('show');
+
+                    // Close notification dropdown if open
+                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function() {
+                if (notificationDropdown) notificationDropdown.classList.remove('show');
+                if (profileMenu) profileMenu.classList.remove('show');
+            });
+
+            // Logout Modal
+            const logoutLink = document.getElementById('logout-link');
+            const modal = document.getElementById('logout-modal');
+            const closeModal = document.querySelector('#logout-modal .close');
+            const confirmLogout = document.getElementById('confirm-logout');
+            const cancelLogout = document.getElementById('cancel-logout');
+
+            if (logoutLink && modal) {
+                logoutLink.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent immediate navigation
+                    modal.style.display = 'block'; // Show the modal
+                });
+            }
+
+            if (closeModal) {
+                closeModal.addEventListener('click', () => {
+                    modal.style.display = 'none'; // Hide the modal
+                });
+            }
+
+            if (cancelLogout) {
+                cancelLogout.addEventListener('click', () => {
+                    modal.style.display = 'none'; // Hide the modal
+                });
+            }
+
+            if (confirmLogout) {
+                confirmLogout.addEventListener('click', () => {
+                    window.location.href = logoutLink.href; // Redirect to logout URL
+                });
+            }
+
+            // Close the modal if clicking outside of it
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none'; // Hide the modal
+                }
+            });
+        });
+
+        
         // Modal Script
         const addSuppliesBtn = document.getElementById('inven-add-supplies-btn');
         const addSuppliesModal = document.getElementById('inven-add-supplies-modal');
@@ -221,18 +466,18 @@ if ($conn->connect_error) {
             const formData = new FormData(addSuppliesForm);
 
             fetch('add_supply.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                Swal.fire('Success', 'Supply added successfully!', 'success').then(() => {
-                    window.location.reload();
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    Swal.fire('Success', 'Supply added successfully!', 'success').then(() => {
+                        window.location.reload();
+                    });
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'An error occurred. Please try again.', 'error');
                 });
-            })
-            .catch(error => {
-                Swal.fire('Error', 'An error occurred. Please try again.', 'error');
-            });
         });
 
         // Event listener for handling edit and delete functionality
@@ -245,13 +490,13 @@ if ($conn->connect_error) {
 
                 let formattedDate = "";
                 if (expiryDate && expiryDate !== '0000-00-00') {
-                    formattedDate = expiryDate;  
+                    formattedDate = expiryDate;
                 }
 
-                document.getElementById('edit-supply-id').value = supplyId;        
-                document.getElementById('edit-supply-name').value = supplyName;     
-                document.getElementById('edit-supply-quantity').value = supplyQuantity; 
-                document.getElementById('edit-expiry-date').value = formattedDate;  
+                document.getElementById('edit-supply-id').value = supplyId;
+                document.getElementById('edit-supply-name').value = supplyName;
+                document.getElementById('edit-supply-quantity').value = supplyQuantity;
+                document.getElementById('edit-expiry-date').value = formattedDate;
 
                 // Show the modal for editing supplies
                 document.getElementById('inven-edit-supplies-modal').style.display = 'block';
@@ -261,7 +506,7 @@ if ($conn->connect_error) {
             if (event.target.classList.contains('delete-supply-btn')) {
                 // Fetch supply ID from the data-id attribute of the clicked delete button
                 const supplyId = event.target.getAttribute('data-id');
-                
+
                 // Sweet Alert confirmation before deletion
                 Swal.fire({
                     title: 'Are you sure?',
@@ -285,18 +530,18 @@ if ($conn->connect_error) {
             const formData = new FormData(editSuppliesForm);
 
             fetch('edit_supply.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                Swal.fire('Success', 'Supply updated successfully!', 'success').then(() => {
-                    window.location.reload();
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    Swal.fire('Success', 'Supply updated successfully!', 'success').then(() => {
+                        window.location.reload();
+                    });
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'An error occurred. Please try again.', 'error');
                 });
-            })
-            .catch(error => {
-                Swal.fire('Error', 'An error occurred. Please try again.', 'error');
-            });
         });
     </script>
 </body>
@@ -308,6 +553,7 @@ if ($conn->connect_error) {
         <button id="confirm-logout" class="btn">Yes</button>
         <button id="cancel-logout" class="btn">No</button>
     </div>
+
 </html>
 
 <?php

@@ -12,6 +12,52 @@ require 'db_connect.php'; ?>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="css/admin-dashboard.css"> <!-- Updated link -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-bell .badge {
+            position: absolute;
+            top: -10px;
+            right: -12px;
+            height: 7px;
+            width: 7px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            border: 2px solid white;
+            padding: 5px;
+            font-size: 12px;
+            padding-bottom: 10px;
+        }
+
+        .dropdown-menu.notifications {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background-color: white;
+            border: 1px solid #ddd;
+            width: 300px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .dropdown-menu.notifications.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
 </head>
 
 <body>
@@ -44,10 +90,56 @@ require 'db_connect.php'; ?>
             <header>
                 <h2>Administrator</h2>
                 <div class="header-right">
-                    <i class="fas fa-bell"></i>
-                    <div class="dropdown">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell" id="notification-bell">
+                        <?php
+                        // Fetch low-stock inventory items
+                        require 'db_connect.php';
+                        $sql = "SELECT name, quantity, threshold_quantity FROM inventory WHERE quantity <= threshold_quantity";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        $lowStockNotifications = [];
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                $lowStockNotifications[] = [
+                                    'name' => $row['name'],
+                                    'quantity' => $row['quantity'],
+                                    'threshold' => $row['threshold_quantity'],
+                                ];
+                            }
+                        }
+
+                        $hasLowStock = !empty($lowStockNotifications);
+                        ?>
+                        <i class="fas fa-bell" style="color: <?php echo $hasLowStock ? 'red' : '#555'; ?>;"></i>
+                        <?php if ($hasLowStock): ?>
+                            <span class="badge"><?php echo count($lowStockNotifications); ?></span>
+                        <?php endif; ?>
+                        <div class="dropdown-menu notifications" id="notification-dropdown">
+                            <?php if ($hasLowStock): ?>
+                                <?php foreach ($lowStockNotifications as $notification): ?>
+                                    <div class="dropdown-item" onclick="location.href='inventory-dashboard.php';" style="cursor: pointer;">
+                                        <p>
+                                            <strong>Low Stock Alert:</strong> <?php echo htmlspecialchars($notification['name']); ?><br>
+                                            Current Quantity: <?php echo htmlspecialchars($notification['quantity']); ?><br>
+                                            Restock Threshold: <?php echo htmlspecialchars($notification['threshold']); ?>
+                                        </p>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="dropdown-item">
+                                    <p>No low-stock alerts</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Profile Dropdown -->
+                    <div class="profile-dropdown" id="profile-dropdown">
                         <i class="fas fa-user-circle"></i>
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu profile-menu" id="profile-menu">
                             <a href="account-information.php" id="view-profile" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 <span>Account Info</span>
@@ -63,7 +155,10 @@ require 'db_connect.php'; ?>
                         </div>
                     </div>
                 </div>
+
+
             </header>
+
             <section class="main-content">
                 <div class="table-container"> <!-- New container -->
                     <h3>List of Residents</h3>
@@ -79,17 +174,56 @@ require 'db_connect.php'; ?>
                         <tbody>
                             <?php
                             // Fetch users with the role of Resident
-                            $sql = "SELECT id, fullname, email, username FROM users WHERE role = 'Resident'";
+                            $sql = "
+        SELECT 
+            u.id, 
+            u.fullname, 
+            u.email, 
+            COALESCE(
+                CASE
+                    WHEN sa.status = 'for pickup' THEN 'For Pickup'
+                    WHEN sa.status = 'received' THEN 'Received'
+                    ELSE 'Eligible'
+                END,
+                'Eligible'
+            ) AS assistance_status
+        FROM users u
+        LEFT JOIN (
+            SELECT id, resident_id, status
+            FROM scheduled_assistance
+            WHERE id IN (
+                SELECT MAX(id) 
+                FROM scheduled_assistance 
+                GROUP BY resident_id
+            )
+        ) sa ON u.id = sa.resident_id
+        WHERE u.role = 'Resident'
+        ";
+
                             $result = $conn->query($sql);
 
                             if ($result->num_rows > 0) {
                                 while ($row = $result->fetch_assoc()) {
                                     echo "<tr>";
-                                    echo "<td>" . $row['fullname'] . "</td>";
-                                    echo "<td>" . $row['email'] . "</td>";
-                                    echo "<td>Sent</td>";
-                                    // Add data-resident-id attribute to pass the resident ID
-                                    echo "<td><button class='btn-sched' data-resident-id='" . $row['id'] . "'>Schedule</button> <button class='btn-edit'>Edit</button> <button class='btn-delete'>Delete</button></td>";
+                                    echo "<td>" . htmlspecialchars($row['fullname']) . "</td>";
+                                    echo "<td>" . htmlspecialchars($row['email']) . "</td>";
+
+                                    // Display assistance status
+                                    echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
+
+                                    // Conditional logic to display buttons
+                                    echo "<td>";
+                                    if ($row['assistance_status'] !== 'For Pickup') {
+                                        echo "<button class='btn-sched' data-resident-id='" . htmlspecialchars($row['id']) . "'>Schedule</button>";
+                                    }
+                                    if ($row['assistance_status'] === 'For Pickup') {
+                                        echo "<button class='btn-edit' data-resident-id='" . htmlspecialchars($row['id']) . "'>Edit</button>";
+                                        echo "<button class='btn-delete' data-resident-id='" . htmlspecialchars($row['id']) . "'>Delete</button>";
+                                        error_log("Resident ID: " . $row['id']);
+                                    }
+                                    echo "</td>";
+
+
                                     echo "</tr>";
                                 }
                             } else {
@@ -99,7 +233,6 @@ require 'db_connect.php'; ?>
                             $conn->close();
                             ?>
                         </tbody>
-
                     </table>
                 </div>
             </section>
@@ -159,15 +292,98 @@ require 'db_connect.php'; ?>
     <div id="delete-modal" class="modal">
         <div class="modal-content">
             <span class="close" id="close-delete-modal">&times;</span>
-            <h2>Delete Resident</h2>
-            <p>Are you sure you want to delete this resident?</p>
-            <button class="btn">Confirm</button>
-            <button class="btn" id="cancel-delete">Cancel</button>
+            <h2>Delete Schedule</h2>
+            <p>Are you sure you want to delete this schedule?</p>
+            <form id="delete-form" method="POST" action="delete_assistance.php" style="display: inline-block">
+                <input type="hidden" name="resident_id" id="delete-resident-id">
+                <input type="hidden" name="resident_id" id="resident_id">
+                <button type="submit" class="btn">Confirm</button>
+            </form>
+            <button class="btn" id="cancel-del">Cancel</button>
         </div>
     </div>
 
     <script src="js/admin-dashboard.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notification Dropdown
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('show');
+
+                    // Close profile menu if open
+                    const profileMenu = document.getElementById('profile-menu');
+                    if (profileMenu && profileMenu.classList.contains('show')) {
+                        profileMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Profile Dropdown
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileMenu = document.getElementById('profile-menu');
+            if (profileDropdown) {
+                profileDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('show');
+
+                    // Close notification dropdown if open
+                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function() {
+                if (notificationDropdown) notificationDropdown.classList.remove('show');
+                if (profileMenu) profileMenu.classList.remove('show');
+            });
+
+            // Logout Modal
+            const logoutLink = document.getElementById('logout-link');
+            const modal = document.getElementById('logout-modal');
+            const closeModal = document.querySelector('#logout-modal .close');
+            const confirmLogout = document.getElementById('confirm-logout');
+            const cancelLogout = document.getElementById('cancel-logout');
+
+            if (logoutLink && modal) {
+                logoutLink.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent immediate navigation
+                    modal.style.display = 'block'; // Show the modal
+                });
+            }
+
+            if (closeModal) {
+                closeModal.addEventListener('click', () => {
+                    modal.style.display = 'none'; // Hide the modal
+                });
+            }
+
+            if (cancelLogout) {
+                cancelLogout.addEventListener('click', () => {
+                    modal.style.display = 'none'; // Hide the modal
+                });
+            }
+
+            if (confirmLogout) {
+                confirmLogout.addEventListener('click', () => {
+                    window.location.href = logoutLink.href; // Redirect to logout URL
+                });
+            }
+
+            // Close the modal if clicking outside of it
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none'; // Hide the modal
+                }
+            });
+        });
+
+
         // Get modal elements
         const scheduleModal = document.getElementById('schedule-modal');
         const editModal = document.getElementById('edit-modal');
@@ -183,6 +399,8 @@ require 'db_connect.php'; ?>
         const closeEditModal = document.getElementById('close-edit-modal');
         const closeDeleteModal = document.getElementById('close-delete-modal');
         const cancelSchedula = document.getElementById('cancel-schedule');
+        const cancelEdit = document.getElementById('cancel-edit');
+        const cancelDel = document.getElementById('cancel-del');
 
         // Add event listeners for opening modals
         schedButtons.forEach(button => {
@@ -215,11 +433,23 @@ require 'db_connect.php'; ?>
         });
 
         deleteButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                deleteModal.style.display = "block";
+            button.addEventListener('click', function() {
+                const residentId = this.getAttribute('data-resident-id'); // Get resident ID from the button
+                document.getElementById('delete-resident-id').value = residentId; // Set hidden input value
+                deleteModal.style.display = "block"; // Show modal
                 document.getElementById('pageContent').classList.add('blur');
             });
         });
+
+
+        document.querySelectorAll('.delete-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const residentId = e.target.getAttribute('data-resident-id');
+                residentIdInput.value = residentId;
+                document.getElementById('delete-modal').style.display = 'block'; // Open the modal
+            });
+        });
+
 
         // Add event listeners for closing modals
         closeScheduleModal.addEventListener('click', () => {
@@ -239,6 +469,16 @@ require 'db_connect.php'; ?>
 
         cancelSchedula.addEventListener('click', () => {
             scheduleModal.style.display = "none";
+            document.getElementById('pageContent').classList.remove('blur');
+        });
+
+        cancelEdit.addEventListener('click', () => {
+            editModal.style.display = "none";
+            document.getElementById('pageContent').classList.remove('blur');
+        });
+
+        cancelDel.addEventListener('click', () => {
+            deleteModal.style.display = "none";
             document.getElementById('pageContent').classList.remove('blur');
         });
 

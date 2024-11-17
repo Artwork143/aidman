@@ -12,15 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $target_file = $target_dir . basename($_FILES["supply_image"]["name"]);
     move_uploaded_file($_FILES["supply_image"]["tmp_name"], $target_file);
 
-    // Insert into database
-    $sql = "INSERT INTO inventory (name, quantity, unit, expiry_date, image_path) VALUES ('$name', '$quantity', '$unit', '$expiry_date', '$target_file')";
+    // Insert into database with initial_quantity and auto-calculated threshold
+    $sql = "INSERT INTO inventory (name, quantity, initial_quantity, unit, expiry_date, image_path) 
+            VALUES ('$name', '$quantity', '$quantity', '$unit', '$expiry_date', '$target_file')";
 
     if ($conn->query($sql) === TRUE) {
-        header('Location: inventory-dashboard.php?status=add');
+        echo "success";
     } else {
-        header('Location: inventory-dashboard.php?status=error');
+        echo "error: " . $conn->error;
     }
 
     $conn->close();
 }
-?>
