@@ -12,9 +12,6 @@ require 'db_connect.php'; ?>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="css/admin-dashboard.css"> <!-- Updated link -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-
-    </style>
 </head>
 
 <body>
@@ -263,8 +260,8 @@ require 'db_connect.php'; ?>
     </script>
 </body>
 <!-- Logout Confirmation Modal -->
-<div id="logout-modal" class="modal">
-    <div class="modal-content">
+<div id="logout-modal" class="logout-modal">
+    <div class="logout-content">
         <span class="close">&times;</span>
         <h2>Are you sure you want to logout?</h2>
         <button id="confirm-logout" class="btn">Yes</button>
