@@ -70,6 +70,7 @@ $conn->close();
     <title>Resident Dashboard</title>
     <link rel="stylesheet" href="assistance.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.css">
     <!-- Link to Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -220,6 +221,8 @@ $conn->close();
 
 
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Notification Dropdown
@@ -407,6 +410,57 @@ $conn->close();
                     notificationModal.style.display = 'none';
                 }
             });
+        });
+
+        // Submit the edit form and show a Swal.fire success message upon successful update
+        document.getElementById('confirm-assistance').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Create a FormData object to send the form data
+            let formData = new FormData(this);
+
+            // Send the form data via AJAX (fetch)
+            fetch('deduct-inventory.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message with Swal.fire
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: data.success,
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Optionally, close the modal or reload the page
+                                document.getElementById('notification-modal').style.display = 'none';
+                                document.getElementById('pageContent').classList.remove('blur');
+                                // Optionally, reload the page to reflect the updates
+                                // location.reload();
+                            }
+                        });
+                    } else if (data.error) {
+                        // Handle error response from PHP
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: data.error,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Something went wrong. Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                });
         });
     </script>
 

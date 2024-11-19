@@ -58,6 +58,92 @@ require 'db_connect.php'; ?>
         .dropdown-item:hover {
             background-color: #f1f1f1;
         }
+
+        .hidden {
+            display: none;
+        }
+
+        .modal-search {
+
+            /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Black w/ opacity */
+        }
+
+        .modal-search-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+
+            padding: 20px;
+            width: 400px;
+            border-radius: 8px;
+        }
+
+        .modal-close {
+            align-self: flex-end;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #residentSearch {
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #residentSearchResults {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        #residentSearchResults div {
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        #residentSearchResults div:hover {
+            background: #f0f0f0;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-add {
+            margin-right: 10px;
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn-add:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 
@@ -161,45 +247,49 @@ require 'db_connect.php'; ?>
             </header>
 
             <section class="main-content">
-                <div class="table-container"> <!-- New container -->
-                    <h3>List of Residents</h3>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Scheduled Residents</h3>
+                        <button id="addResidentBtn" class="btn-add">Add Resident</button>
+                    </div>
                     <table border="1" cellspacing="0" cellpadding="5">
                         <thead>
                             <tr>
                                 <th>Full Name</th>
-                                <th>Email</th>
+                                <th>Distribution Date/Time</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="residentTableBody">
                             <?php
-                            // Fetch users with the role of Resident
+                            require_once 'db_connect.php';
+
+                            // Fetch data from schedule_residents with the latest schedule details
                             $sql = "
-        SELECT 
-            u.id, 
-            u.fullname, 
-            u.email, 
-            COALESCE(
-                CASE
-                    WHEN sa.status = 'for pickup' THEN 'For Pickup'
-                    WHEN sa.status = 'received' THEN 'Received'
-                    ELSE 'Eligible'
-                END,
-                'Eligible'
-            ) AS assistance_status
-        FROM users u
-        LEFT JOIN (
-            SELECT id, resident_id, status
-            FROM scheduled_assistance
-            WHERE id IN (
-                SELECT MAX(id) 
-                FROM scheduled_assistance 
-                GROUP BY resident_id
-            )
-        ) sa ON u.id = sa.resident_id
-        WHERE u.role = 'Resident'
-        ";
+                    SELECT 
+                        sr.id,
+                        sr.fullname,
+                        sa.pickup_date AS distribution_datetime,
+                        COALESCE(
+                            CASE
+                                WHEN sr.assistance_status = 'for pickup' THEN 'For Pickup'
+                                WHEN sr.assistance_status = 'received' THEN 'Received'
+                                ELSE 'Eligible'
+                            END,
+                            'Eligible'
+                        ) AS assistance_status
+                    FROM schedule_residents sr
+                    LEFT JOIN (
+                        SELECT id, resident_id, pickup_date
+                        FROM scheduled_assistance
+                        WHERE id IN (
+                            SELECT MAX(id) 
+                            FROM scheduled_assistance 
+                            GROUP BY resident_id
+                        )
+                    ) sa ON sr.id = sa.resident_id
+                ";
 
                             $result = $conn->query($sql);
 
@@ -207,24 +297,18 @@ require 'db_connect.php'; ?>
                                 while ($row = $result->fetch_assoc()) {
                                     echo "<tr>";
                                     echo "<td>" . htmlspecialchars($row['fullname']) . "</td>";
-                                    echo "<td>" . htmlspecialchars($row['email']) . "</td>";
-
-                                    // Display assistance status
+                                    echo "<td>" . (!empty($row['distribution_datetime']) ? htmlspecialchars($row['distribution_datetime']) : 'N/A') . "</td>";
                                     echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
-
-                                    // Conditional logic to display buttons
                                     echo "<td>";
                                     if ($row['assistance_status'] !== 'For Pickup') {
                                         echo "<button class='btn-sched' data-resident-id='" . htmlspecialchars($row['id']) . "'>Schedule</button>";
                                     }
                                     if ($row['assistance_status'] === 'For Pickup') {
                                         echo "<button class='btn-edit' data-resident-id='" . htmlspecialchars($row['id']) . "'>Edit</button>";
-                                        echo "<button class='btn-delete' data-resident-id='" . htmlspecialchars($row['id']) . "'>Delete</button>";
-                                        error_log("Resident ID: " . $row['id']);
+                                        
                                     }
+                                    echo "<button class='btn-delete' data-resident-id='" . htmlspecialchars($row['id']) . "'>Delete</button>";
                                     echo "</td>";
-
-
                                     echo "</tr>";
                                 }
                             } else {
@@ -237,6 +321,7 @@ require 'db_connect.php'; ?>
                     </table>
                 </div>
             </section>
+
         </main>
     </div>
     <!-- Modals -->
@@ -331,304 +416,178 @@ require 'db_connect.php'; ?>
         </div>
     </div>
 
+
+    <!-- Search Modal -->
+    <div id="residentModal" class="modal-search hidden">
+        <div class="modal-search-content">
+            <span id="closeModal" class="modal-close">&times;</span>
+            <h3>Select a Resident</h3>
+            <input type="text" id="residentSearch" placeholder="Search by name..." />
+            <div id="residentSearchResults"></div>
+            <button id="confirmResidentBtn" disabled>Confirm</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script src="js/admin-dashboard.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const editButtons = document.querySelectorAll(".btn-edit");
-            const editModal = document.getElementById("edit-modal");
-            const closeEditModal = document.getElementById("close-edit-modal");
-            const editForm = document.getElementById("edit-form");
+        document.addEventListener("DOMContentLoaded", () => {
+            // Elements
+            const scheduleModal = document.getElementById('schedule-modal');
+            const editModal = document.getElementById('edit-modal');
+            const deleteModal = document.getElementById('delete-modal');
+            const residentModal = document.getElementById('residentModal');
+            const pageContent = document.getElementById('pageContent');
+            const addResidentBtn = document.getElementById('addResidentBtn');
+            const closeScheduleModal = document.getElementById('close-schedule-modal');
+            const cancelSchedModal = document.getElementById('cancel-schedule');
+            const closeEditModal = document.getElementById('close-edit-modal');
+            const closeDeleteModal = document.getElementById('close-delete-modal');
+            const closeResidentModal = document.getElementById('closeModal');
+            const residentSearch = document.getElementById('residentSearch');
+            const residentSearchResults = document.getElementById('residentSearchResults');
+            const confirmResidentBtn = document.getElementById('confirmResidentBtn');
+            const residentTableBody = document.getElementById('residentTableBody');
+            let selectedResidentId = null;
 
-            // Handle Edit button click
-            editButtons.forEach(button => {
-                button.addEventListener("click", function() {
-                    const residentId = this.dataset.residentId;
 
-                    // Populate the modal with existing data
-                    fetch(`get_resident_assistance.php?resident_id=${residentId}`)
+            // Helpers
+            const openModal = (modal) => {
+                modal.style.display = 'block';
+                pageContent.classList.add('blur');
+            };
+
+            const closeModal = (modal) => {
+                modal.style.display = 'none';
+                pageContent.classList.remove('blur');
+            };
+
+            // Add Event Listeners
+            addResidentBtn?.addEventListener('click', () => openModal(residentModal));
+            closeResidentModal?.addEventListener('click', () => closeModal(residentModal));
+            closeScheduleModal?.addEventListener('click', () => closeModal(scheduleModal));
+            closeEditModal?.addEventListener('click', () => closeModal(editModal));
+            cancelSchedModal?.addEventListener('click', () => closeModal(scheduleModal));
+            closeDeleteModal?.addEventListener('click', () => closeModal(deleteModal));
+
+            window.addEventListener('click', (event) => {
+                if (event.target === scheduleModal) closeModal(scheduleModal);
+                if (event.target === editModal) closeModal(editModal);
+                if (event.target === deleteModal) closeModal(deleteModal);
+                if (event.target === residentModal) closeModal(residentModal);
+            });
+
+            // Search Residents
+            residentSearch?.addEventListener('input', () => {
+                const query = residentSearch.value.trim();
+                if (query.length > 2) {
+                    fetch(`/Brgy Zone 1/search-residents.php?q=${encodeURIComponent(query)}`)
                         .then(response => response.json())
                         .then(data => {
-                            document.getElementById("edit-resident-id").value = residentId;
-                            document.getElementById("edit-pickup-date").value = data.pickup_date;
+                            residentSearchResults.innerHTML = '';
 
-                            // Populate inventory item quantities
-                            for (const [itemId, quantity] of Object.entries(data.items)) {
-                                const itemInput = document.getElementById(`edit-item_${itemId}`);
-                                if (itemInput) {
-                                    itemInput.value = quantity;
-                                }
+                            // Check if the server returned an error
+                            if (data.error) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.textContent = data.error;
+                                errorDiv.classList.add('error-message'); // Add a class for styling
+                                residentSearchResults.appendChild(errorDiv);
+                                confirmResidentBtn.disabled = true;
+                                return;
                             }
 
-                            // Show the modal
-                            editModal.style.display = "block";
+                            // Populate search results with residents
+                            data.forEach(resident => {
+                                const div = document.createElement('div');
+                                div.textContent = resident.fullname;
+                                div.dataset.residentId = resident.id;
+                                div.addEventListener('click', () => {
+                                    selectedResidentId = resident.id;
+                                    residentSearchResults.querySelectorAll('div').forEach(node => node.classList.remove('selected'));
+                                    div.classList.add('selected');
+                                    confirmResidentBtn.disabled = false;
+                                });
+                                residentSearchResults.appendChild(div);
+                            });
                         })
-                        .catch(error => {
-                            console.error("Error fetching resident data:", error);
-                        });
-                });
-            });
-
-            // Close modal
-            closeEditModal.addEventListener("click", function() {
-                editModal.style.display = "none";
-            });
-
-            // Cancel button closes the modal
-            document.getElementById("cancel-edit").addEventListener("click", function() {
-                editModal.style.display = "none";
-            });
-
-            // Close modal when clicking outside of it
-            window.addEventListener("click", function(event) {
-                if (event.target === editModal) {
-                    editModal.style.display = "none";
+                        .catch(err => console.error("Error fetching residents:", err));
+                } else {
+                    residentSearchResults.innerHTML = '';
                 }
             });
-        });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Notification Dropdown
-            const notificationBell = document.getElementById('notification-bell');
-            const notificationDropdown = document.getElementById('notification-dropdown');
-            if (notificationBell) {
-                notificationBell.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    notificationDropdown.classList.toggle('show');
 
-                    // Close profile menu if open
-                    const profileMenu = document.getElementById('profile-menu');
-                    if (profileMenu && profileMenu.classList.contains('show')) {
-                        profileMenu.classList.remove('show');
-                    }
-                });
-            }
-
-            // Profile Dropdown
-            const profileDropdown = document.getElementById('profile-dropdown');
-            const profileMenu = document.getElementById('profile-menu');
-            if (profileDropdown) {
-                profileDropdown.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileMenu.classList.toggle('show');
-
-                    // Close notification dropdown if open
-                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
-                        notificationDropdown.classList.remove('show');
-                    }
-                });
-            }
-
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function() {
-                if (notificationDropdown) notificationDropdown.classList.remove('show');
-                if (profileMenu) profileMenu.classList.remove('show');
-            });
-
-            // Logout Modal
-            const logoutLink = document.getElementById('logout-link');
-            const modal = document.getElementById('logout-modal');
-            const closeModal = document.querySelector('#logout-modal .close');
-            const confirmLogout = document.getElementById('confirm-logout');
-            const cancelLogout = document.getElementById('cancel-logout');
-
-            if (logoutLink && modal) {
-                logoutLink.addEventListener('click', (e) => {
-                    e.preventDefault(); // Prevent immediate navigation
-                    modal.style.display = 'block'; // Show the modal
-                });
-            }
-
-            if (closeModal) {
-                closeModal.addEventListener('click', () => {
-                    modal.style.display = 'none'; // Hide the modal
-                });
-            }
-
-            if (cancelLogout) {
-                cancelLogout.addEventListener('click', () => {
-                    modal.style.display = 'none'; // Hide the modal
-                });
-            }
-
-            if (confirmLogout) {
-                confirmLogout.addEventListener('click', () => {
-                    window.location.href = logoutLink.href; // Redirect to logout URL
-                });
-            }
-
-            // Close the modal if clicking outside of it
-            window.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    modal.style.display = 'none'; // Hide the modal
+            // Confirm Resident Selection
+            confirmResidentBtn?.addEventListener('click', () => {
+                if (selectedResidentId) {
+                    fetch('/Brgy Zone 1/add-resident.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                residentId: selectedResidentId
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(resident => {
+                            const newRow = `
+                        <tr>
+                            <td>${resident.fullname}</td>
+                            <td>${resident.email}</td>
+                            <td>Eligible</td>
+                            <td>
+                                <button class='btn-sched' data-resident-id='${resident.id}'>Schedule</button>
+                            </td>
+                        </tr>
+                    `;
+                            residentTableBody.insertAdjacentHTML('beforeend', newRow);
+                            closeModal(residentModal);
+                            bindActionButtons();
+                        })
+                        .catch(err => console.error("Error adding resident:", err));
                 }
             });
-        });
 
-
-        // Get modal elements
-        const scheduleModal = document.getElementById('schedule-modal');
-        const editModal = document.getElementById('edit-modal');
-        const deleteModal = document.getElementById('delete-modal');
-
-        // Get buttons for actions
-        const schedButtons = document.querySelectorAll('.btn-sched');
-        const editButtons = document.querySelectorAll('.btn-edit');
-        const deleteButtons = document.querySelectorAll('.btn-delete');
-
-        // Get close buttons
-        const closeScheduleModal = document.getElementById('close-schedule-modal');
-        const closeEditModal = document.getElementById('close-edit-modal');
-        const closeDeleteModal = document.getElementById('close-delete-modal');
-        const cancelSchedula = document.getElementById('cancel-schedule');
-        const cancelEdit = document.getElementById('cancel-edit');
-        const cancelDel = document.getElementById('cancel-del');
-
-        // Add event listeners for opening modals
-        schedButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                scheduleModal.style.display = "block";
-                document.getElementById('pageContent').classList.add('blur');
-            });
-        });
-
-        const residentIdInput = document.getElementById('resident_id'); // Ensure there's an input with this ID in your form
-
-        // Add event listeners for each Schedule button
-        schedButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                // Get the resident ID from data attribute and set it in the form input
-                const residentId = e.target.getAttribute('data-resident-id');
-                residentIdInput.value = residentId;
-
-                // Display the schedule modal
-                scheduleModal.style.display = "block";
-                document.getElementById('pageContent').classList.add('blur');
-            });
-        });
-
-        editButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                editModal.style.display = "block";
-                document.getElementById('pageContent').classList.add('blur');
-            });
-        });
-
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const residentId = this.getAttribute('data-resident-id'); // Get resident ID from the button
-                document.getElementById('delete-resident-id').value = residentId; // Set hidden input value
-                deleteModal.style.display = "block"; // Show modal
-                document.getElementById('pageContent').classList.add('blur');
-            });
-        });
-
-
-        document.querySelectorAll('.delete-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const residentId = e.target.getAttribute('data-resident-id');
-                residentIdInput.value = residentId;
-                document.getElementById('delete-modal').style.display = 'block'; // Open the modal
-            });
-        });
-
-
-        // Add event listeners for closing modals
-        closeScheduleModal.addEventListener('click', () => {
-            scheduleModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        closeEditModal.addEventListener('click', () => {
-            editModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        closeDeleteModal.addEventListener('click', () => {
-            deleteModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        cancelSchedula.addEventListener('click', () => {
-            scheduleModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        cancelEdit.addEventListener('click', () => {
-            editModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        cancelDel.addEventListener('click', () => {
-            deleteModal.style.display = "none";
-            document.getElementById('pageContent').classList.remove('blur');
-        });
-
-        // Click outside the modal to close
-        window.addEventListener('click', (event) => {
-            if (event.target === scheduleModal) {
-                scheduleModal.style.display = "none";
-                document.getElementById('pageContent').classList.remove('blur');
-            }
-            if (event.target === editModal) {
-                editModal.style.display = "none";
-                document.getElementById('pageContent').classList.remove('blur');
-            }
-            if (event.target === deleteModal) {
-                deleteModal.style.display = "none";
-                document.getElementById('pageContent').classList.remove('blur');
-            }
-        });
-
-        // Submit the edit form and show a Swal.fire success message upon successful update
-        document.getElementById('edit-form').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission
-
-            // Create a FormData object to send the form data
-            let formData = new FormData(this);
-
-            // Send the form data via AJAX (fetch)
-            fetch('edit_assistance.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show success message with Swal.fire
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: data.success,
-                            confirmButtonText: 'OK'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // Optionally, close the modal or reload the page
-                                document.getElementById('edit-modal').style.display = 'none';
-                                document.getElementById('pageContent').classList.remove('blur');
-                                // Optionally, reload the page to reflect the updates
-                                // location.reload();
-                            }
-                        });
-                    } else if (data.error) {
-                        // Handle error response from PHP
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: data.error,
-                            confirmButtonText: 'OK'
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Something went wrong. Please try again.',
-                        confirmButtonText: 'OK'
+            // Bind Buttons for Actions
+            const bindActionButtons = () => {
+                document.querySelectorAll('.btn-sched').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const residentId = e.target.getAttribute('data-resident-id');
+                        document.getElementById('resident_id').value = residentId; // Assuming an input with this ID exists
+                        openModal(scheduleModal);
                     });
                 });
+
+                document.querySelectorAll('.btn-edit').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const residentId = e.target.getAttribute('data-resident-id');
+                        fetch(`get_resident_assistance.php?resident_id=${residentId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('edit-resident-id').value = residentId;
+                                document.getElementById('edit-pickup-date').value = data.pickup_date;
+                                Object.entries(data.items || {}).forEach(([itemId, quantity]) => {
+                                    const itemInput = document.getElementById(`edit-item_${itemId}`);
+                                    if (itemInput) itemInput.value = quantity;
+                                });
+                                openModal(editModal);
+                            })
+                            .catch(err => console.error("Error fetching resident data:", err));
+                    });
+                });
+
+                document.querySelectorAll('.btn-delete').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const residentId = e.target.getAttribute('data-resident-id');
+                        document.getElementById('delete-resident-id').value = residentId; // Assuming input with this ID exists
+                        openModal(deleteModal);
+                    });
+                });
+            };
+
+            // Initialize
+            bindActionButtons();
         });
     </script>
 </body>

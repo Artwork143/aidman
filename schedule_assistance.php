@@ -2,16 +2,27 @@
 require 'db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get POST data
     $resident_id = $_POST['resident_id'];
     $pickup_date = $_POST['pickup_date'];
     $items = $_POST['items'];
 
-    // Validate input
+    // Validate input data
     if (empty($resident_id) || empty($pickup_date) || empty($items)) {
         die("Error: Missing required input data.");
     }
 
-    // Create a notification message (optional, stored in the `scheduled_assistance` table)
+    // Check if the resident exists in the schedule_residents table
+    $stmt = $conn->prepare("SELECT id FROM schedule_residents WHERE id = ?");
+    $stmt->bind_param("i", $resident_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        die("Error: Resident not found.");
+    }
+    $stmt->close();
+
+    // Create a notification message
     $notification_message = "Your assistance is scheduled for pickup on $pickup_date.";
 
     // Insert the schedule into `scheduled_assistance` table
@@ -35,9 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Success message
     echo "Schedule successfully created!";
-    header("Location: assistance-scheduling.php");
+    header("Location: assistance-scheduling.php"); // Redirect to the scheduling page
     exit;
 }
 
 $conn->close();
+?>
