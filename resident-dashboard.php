@@ -30,10 +30,22 @@ if ($result && $result->num_rows > 0) {
 }
 
 // Fetch notifications for the logged-in resident from the `scheduled_assistance` table
+// Fetch notifications for the logged-in resident
 $notifications_sql = "
-    SELECT id, notification_message, status 
-    FROM scheduled_assistance 
-    WHERE resident_id = ? AND status NOT IN ('pickup', 'received')
+    SELECT 
+        sr.id AS resident_id, 
+        sr.fullname, 
+        sr.assistance_status, 
+        sa.notification_message 
+    FROM 
+        schedule_residents sr
+    JOIN 
+        scheduled_assistance sa 
+    ON 
+        sr.id = sa.resident_id
+    WHERE 
+        sr.id = ? 
+        AND sr.assistance_status NOT IN ('pickup', 'received')
 ";
 
 // Prepare the statement and check for errors
@@ -57,6 +69,7 @@ $has_new_notifications = count($notifications) > 0;
 
 // Close the statement
 $stmt->close();
+
 
 $conn->close();
 ?>
@@ -148,13 +161,14 @@ $conn->close();
                         <div class="dropdown-menu notifications" id="notification-dropdown">
                             <?php if ($has_new_notifications): ?>
                                 <?php foreach ($notifications as $notification): ?>
-                                    <div class="dropdown-item" data-id="<?php echo $notification['id']; ?>">
+                                    <div class="dropdown-item" data-id="<?php echo $notification['resident_id']; ?>">
                                         <p>
-                                            <strong>Status:</strong> <?php echo htmlspecialchars($notification['status']); ?><br>
+                                            <strong>Status:</strong> <?php echo htmlspecialchars($notification['assistance_status']); ?><br>
                                             <?php echo htmlspecialchars($notification['notification_message']); ?>
                                         </p>
                                     </div>
                                 <?php endforeach; ?>
+
                             <?php else: ?>
                                 <div class="dropdown-item">
                                     <p>No new notifications</p>

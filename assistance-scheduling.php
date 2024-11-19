@@ -426,6 +426,43 @@ require 'db_connect.php'; ?>
     <script src="js/admin-dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // Notification Dropdown
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('show');
+
+                    // Close profile menu if open
+                    const profileMenu = document.getElementById('profile-menu');
+                    if (profileMenu && profileMenu.classList.contains('show')) {
+                        profileMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Profile Dropdown
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileMenu = document.getElementById('profile-menu');
+            if (profileDropdown) {
+                profileDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('show');
+
+                    // Close notification dropdown if open
+                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function() {
+                if (notificationDropdown) notificationDropdown.classList.remove('show');
+                if (profileMenu) profileMenu.classList.remove('show');
+            });
+
             // Elements
             const modals = {
                 schedule: document.getElementById('scheduleModal'),
