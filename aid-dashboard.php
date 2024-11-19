@@ -2,6 +2,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +11,57 @@
     <!-- Link to Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Link to SweetAlert -->
+    <style>
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-bell .badge {
+            position: absolute;
+            top: -10px;
+            right: -12px;
+            height: 7px;
+            width: 7px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            border: 2px solid white;
+            padding: 5px;
+            font-size: 12px;
+            padding-bottom: 10px;
+        }
+
+        .dropdown-menu.notifications {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background-color: white;
+            border: 1px solid #ddd;
+            width: 300px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .dropdown-menu.notifications.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-    
+
     <div class="container">
         <aside class="sidebar">
             <div class="logo">
@@ -44,11 +92,56 @@
             <header>
                 <h2>Administrator</h2>
                 <div class="header-right">
-                    <i class="fas fa-bell"></i>
-                    <div class="dropdown">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell" id="notification-bell">
+                        <?php
+                        // Fetch low-stock inventory items
+                        require 'db_connect.php';
+                        $sql = "SELECT name, quantity, threshold_quantity FROM inventory WHERE quantity <= threshold_quantity";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        $lowStockNotifications = [];
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                $lowStockNotifications[] = [
+                                    'name' => $row['name'],
+                                    'quantity' => $row['quantity'],
+                                    'threshold' => $row['threshold_quantity'],
+                                ];
+                            }
+                        }
+
+                        $hasLowStock = !empty($lowStockNotifications);
+                        ?>
+                        <i class="fas fa-bell" style="color: <?php echo $hasLowStock ? 'red' : '#555'; ?>;"></i>
+                        <?php if ($hasLowStock): ?>
+                            <span class="badge"><?php echo count($lowStockNotifications); ?></span>
+                        <?php endif; ?>
+                        <div class="dropdown-menu notifications" id="notification-dropdown">
+                            <?php if ($hasLowStock): ?>
+                                <?php foreach ($lowStockNotifications as $notification): ?>
+                                    <div class="dropdown-item" onclick="location.href='inventory-dashboard.php';" style="cursor: pointer;">
+                                        <p>
+                                            <strong>Low Stock Alert:</strong> <?php echo htmlspecialchars($notification['name']); ?><br>
+                                            Current Quantity: <?php echo htmlspecialchars($notification['quantity']); ?><br>
+                                            Restock Threshold: <?php echo htmlspecialchars($notification['threshold']); ?>
+                                        </p>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="dropdown-item">
+                                    <p>No low-stock alerts</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="profile-dropdown" id="profile-dropdown">
                         <i class="fas fa-user-circle"></i>
-                        <div class="dropdown-menu">
-                        <a href="account-information.php" id="view-profile" class="dropdown-item">
+                        <div class="dropdown-menu profile-menu" id="profile-menu">
+                            <a href="account-information.php" id="view-profile" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 <span>Account Info</span>
                             </a>
@@ -59,7 +152,7 @@
                             <a href="login.php" id="logout-link" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
-                            </a>                            
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -72,22 +165,22 @@
                     <form action="submit_aid.php" method="post">
                         <label for="name">Name:</label>
                         <input type="text" id="name" name="name" required><br>
-                        
+
                         <label for="damage_severity">Damage Severity (1-10):</label>
                         <input type="number" id="damage_severity" name="damage_severity" min="1" max="10" required><br>
-                        
+
                         <label for="number_of_occupants">Number of Occupants:</label>
                         <input type="number" id="number_of_occupants" name="number_of_occupants" required><br>
-                        
+
                         <label for="vulnerability">Vulnerability (1-10):</label>
                         <input type="number" id="vulnerability" name="vulnerability" min="1" max="10" required><br>
-                        
+
                         <label for="income_level">Income Level (1-10):</label>
                         <input type="number" id="income_level" name="income_level" min="1" max="10" required><br>
-                        
+
                         <label for="special_needs">Special Needs (1-10):</label>
                         <input type="number" id="special_needs" name="special_needs" min="1" max="10" required><br>
-                        
+
                         <input type="submit" value="Submit">
                     </form>
                 </div>
@@ -109,13 +202,16 @@
                             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
                             animation: shine 1s ease-in-out;
                         }
+
                         @keyframes shine {
                             0% {
                                 box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
                             }
+
                             50% {
                                 box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
                             }
+
                             100% {
                                 box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
                             }
@@ -127,13 +223,16 @@
                             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
                             animation: shine 1s ease-in-out;
                         }
+
                         @keyframes shine {
                             0% {
                                 box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
                             }
+
                             50% {
                                 box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
                             }
+
                             100% {
                                 box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
                             }
@@ -147,13 +246,13 @@
                         $rankings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         ?>
                         <?php foreach ($rankings as $index => $resident): ?>
-                        <li class="person">
-                            <span class="icon"><?php echo $index + 1; ?></span>
-                            <span class="nickname"><?php echo htmlspecialchars($resident['name']); ?></span>
-                            <span class="score"><?php echo htmlspecialchars($resident['total_score']); ?></span>
-                            <a href="#" class="btn btn-leaderboard-edit edit-btn" data-id="<?php echo urlencode($resident['id']); ?>">Edit</a>
-                            <a href="#" class="btn btn-leaderboard-delete delete-btn" data-id="<?php echo urlencode($resident['id']); ?>">Delete</a>
-                        </li>
+                            <li class="person">
+                                <span class="icon"><?php echo $index + 1; ?></span>
+                                <span class="nickname"><?php echo htmlspecialchars($resident['name']); ?></span>
+                                <span class="score"><?php echo htmlspecialchars($resident['total_score']); ?></span>
+                                <a href="#" class="btn btn-leaderboard-edit edit-btn" data-id="<?php echo urlencode($resident['id']); ?>">Edit</a>
+                                <a href="#" class="btn btn-leaderboard-delete delete-btn" data-id="<?php echo urlencode($resident['id']); ?>">Delete</a>
+                            </li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -195,6 +294,46 @@
             printWindow.document.close();
             printWindow.print();
         }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notification Dropdown
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('show');
+
+                    // Close profile menu if open
+                    const profileMenu = document.getElementById('profile-menu');
+                    if (profileMenu && profileMenu.classList.contains('show')) {
+                        profileMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Profile Dropdown
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const profileMenu = document.getElementById('profile-menu');
+            if (profileDropdown) {
+                profileDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('show');
+
+                    // Close notification dropdown if open
+                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function() {
+                if (notificationDropdown) notificationDropdown.classList.remove('show');
+                if (profileMenu) profileMenu.classList.remove('show');
+            });
+        });
     </script>
 </body>
 <!-- Logout Confirmation Modal -->
@@ -206,4 +345,5 @@
         <button id="cancel-logout" class="btn">No</button>
     </div>
 </div>
+
 </html>

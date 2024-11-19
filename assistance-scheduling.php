@@ -300,20 +300,34 @@ require 'db_connect.php'; ?>
                                     echo "<td>" . (!empty($row['distribution_datetime']) ? htmlspecialchars($row['distribution_datetime']) : 'N/A') . "</td>";
                                     echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
                                     echo "<td>";
-                                    if ($row['assistance_status'] !== 'For Pickup') {
-                                        echo "<button class='btn-sched' data-resident-id='" . htmlspecialchars($row['id']) . "'>Schedule</button>";
-                                    }
+
+                                    // Only show the Edit button if the status is "For Pickup"
                                     if ($row['assistance_status'] === 'For Pickup') {
-                                        echo "<button class='btn-edit' data-resident-id='" . htmlspecialchars($row['id']) . "'>Edit</button>";
-                                        
+                                        echo "<button 
+                                                class='btn-edit' 
+                                                data-resident-id='" . htmlspecialchars($row['id']) . "' 
+                                                data-fullname='" . htmlspecialchars($row['fullname']) . "' 
+                                                data-distribution-date='" . htmlspecialchars($row['distribution_datetime']) . "' 
+                                                data-status='" . htmlspecialchars($row['assistance_status']) . "'>
+                                                Edit
+                                              </button>";
+
+                                        // Delete button
+                                        echo "<button 
+                                            class='btn-delete' 
+                                            data-resident-id='" . htmlspecialchars($row['id']) . "'>
+                                            Delete
+                                          </button>";
                                     }
-                                    echo "<button class='btn-delete' data-resident-id='" . htmlspecialchars($row['id']) . "'>Delete</button>";
+
+
                                     echo "</td>";
                                     echo "</tr>";
                                 }
                             } else {
                                 echo "<tr><td colspan='4'>No residents found.</td></tr>";
                             }
+
 
                             $conn->close();
                             ?>
@@ -322,99 +336,79 @@ require 'db_connect.php'; ?>
                 </div>
             </section>
 
+
         </main>
     </div>
     <!-- Modals -->
     <!-- Schedule Modal -->
-    <div id="schedule-modal" class="modal">
+    <div id="scheduleModal" class="modal">
         <div class="modal-content">
-            <span class="close" id="close-schedule-modal">&times;</span>
-            <h2>Schedule Assistance</h2>
-            <form id="schedule-form" method="POST" action="schedule_assistance.php">
-                <input type="hidden" name="resident_id" id="resident_id">
+            <h3>Schedule Assistance</h3>
+            <form id="scheduleForm">
+                <label for="distributionDate">Distribution Date/Time:</label>
+                <input type="datetime-local" id="distributionDate" name="distribution_date" required>
 
-                <!-- Pickup Date -->
-                <label for="pickup_date">Pickup Date:</label>
-                <input type="date" name="pickup_date" required>
+                <h4>Supplies:</h4>
+                <div id="suppliesList">
+                    <!-- Supply items with quantity input will be dynamically loaded here -->
+                </div>
 
-                <!-- Inventory Items and Quantities -->
-                <h3>Supplies</h3>
-                <?php
-                // Fetch inventory items with their units
-                require 'db_connect.php';
-                $sql = "SELECT id, name, quantity, unit FROM inventory";
-                $result = $conn->query($sql);
+                <label for="status">Status:</label>
+                <select id="status" name="status" required>
+                    <option value="for pickup">For Pickup</option>
+                    <option value="received">Received</option>
+                </select>
 
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo "<div>";
-                        echo "<label for='item_" . $row['id'] . "'>" . $row['name'] . " (Available: " . $row['quantity'] . " " . $row['unit'] . ")</label>";
-                        echo "<input type='number' id='item_" . $row['id'] . "' name='items[" . $row['id'] . "]' min='0' max='" . $row['quantity'] . "'>";
-                        echo "<span>" . $row['unit'] . "</span>";
-                        echo "</div>";
-                    }
-                }
-                $conn->close();
-                ?>
-
-                <button type="submit" class="btn">Confirm Schedule</button>
-                <button type="button" class="btn" id="cancel-schedule">Cancel</button>
+                <button type="submit" class="btn-submit">Submit</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('scheduleModal')">Cancel</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal for Editing Assistance -->
-    <div id="edit-modal" class="modal">
+
+    <div id="editModal" class="modal">
         <div class="modal-content">
-            <span class="close" id="close-edit-modal">&times;</span>
-            <h2>Edit Assistance</h2>
-            <form id="edit-form" method="POST" action="edit_assistance.php">
-                <input type="hidden" name="resident_id" id="edit-resident-id">
+            <h3>Edit Assistance Schedule</h3>
+            <form id="editForm">
+                <input type="hidden" id="editResidentId" name="resident_id" />
 
-                <!-- Pickup Date -->
-                <label for="edit-pickup-date">Pickup Date:</label>
-                <input type="date" name="pickup_date" id="edit-pickup-date" required>
+                <label for="editFullname">Full Name:</label>
+                <input type="text" id="editFullname" name="fullname" disabled />
 
-                <!-- Inventory Items and Quantities -->
-                <h3>Supplies</h3>
-                <?php
-                // Fetch inventory items with their units
-                require 'db_connect.php';
-                $sql = "SELECT id, name, quantity, unit FROM inventory";
-                $result = $conn->query($sql);
+                <label for="editDistributionDate">Distribution Date/Time:</label>
+                <input type="datetime-local" id="editDistributionDate" name="distribution_date" required />
 
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo "<div>";
-                        echo "<label for='edit-item_" . $row['id'] . "'>" . $row['name'] . " (Available: " . $row['quantity'] . " " . $row['unit'] . ")</label>";
-                        echo "<input type='number' id='edit-item_" . $row['id'] . "' name='items[" . $row['id'] . "]' min='0' max='" . $row['quantity'] . "'>";
-                        echo "<span>" . $row['unit'] . "</span>";
-                        echo "</div>";
-                    }
-                }
-                $conn->close();
-                ?>
+                <h4>Supplies:</h4>
+                <div id="editSuppliesList">
+                    <!-- Supplies will be dynamically loaded -->
+                </div>
 
-                <button type="submit" class="btn">Update</button>
-                <button type="button" class="btn" id="cancel-edit">Cancel</button>
+                <label for="editStatus">Status:</label>
+                <select id="editStatus" name="status" required>
+                    <option value="for pickup">For Pickup</option>
+                    <option value="received">Received</option>
+                </select>
+
+                <button type="submit" class="btn-submit">Update</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
             </form>
         </div>
     </div>
 
-    <!-- Delete Modal -->
-    <div id="delete-modal" class="modal">
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" id="close-delete-modal">&times;</span>
-            <h2>Delete Schedule</h2>
+            <h3>Confirm Deletion</h3>
             <p>Are you sure you want to delete this schedule?</p>
-            <form id="delete-form" method="POST" action="delete_assistance.php" style="display: inline-block">
-                <input type="hidden" name="resident_id" id="delete-resident-id">
-                <input type="hidden" name="resident_id" id="resident_id">
-                <button type="submit" class="btn">Confirm</button>
+            <form id="deleteForm">
+                <input type="hidden" id="deleteResidentId" name="resident_id">
+                <button type="submit" class="btn-confirm">Delete</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
             </form>
-            <button class="btn" id="cancel-del">Cancel</button>
         </div>
     </div>
+
 
 
     <!-- Search Modal -->
@@ -424,172 +418,355 @@ require 'db_connect.php'; ?>
             <h3>Select a Resident</h3>
             <input type="text" id="residentSearch" placeholder="Search by name..." />
             <div id="residentSearchResults"></div>
-            <button id="confirmResidentBtn" disabled>Confirm</button>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script src="js/admin-dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             // Elements
-            const scheduleModal = document.getElementById('schedule-modal');
-            const editModal = document.getElementById('edit-modal');
-            const deleteModal = document.getElementById('delete-modal');
-            const residentModal = document.getElementById('residentModal');
-            const pageContent = document.getElementById('pageContent');
+            const modals = {
+                schedule: document.getElementById('scheduleModal'),
+                resident: document.getElementById('residentModal'), // Ensure this is correct
+            };
             const addResidentBtn = document.getElementById('addResidentBtn');
-            const closeScheduleModal = document.getElementById('close-schedule-modal');
-            const cancelSchedModal = document.getElementById('cancel-schedule');
-            const closeEditModal = document.getElementById('close-edit-modal');
-            const closeDeleteModal = document.getElementById('close-delete-modal');
-            const closeResidentModal = document.getElementById('closeModal');
+            const residentTableBody = document.getElementById('residentTableBody');
+            const pageContent = document.getElementById('pageContent');
             const residentSearch = document.getElementById('residentSearch');
             const residentSearchResults = document.getElementById('residentSearchResults');
-            const confirmResidentBtn = document.getElementById('confirmResidentBtn');
-            const residentTableBody = document.getElementById('residentTableBody');
+            const scheduleForm = document.getElementById('scheduleForm');
+            const suppliesList = document.getElementById('suppliesList');
             let selectedResidentId = null;
-
+            let selectedResidentFullname = '';
 
             // Helpers
             const openModal = (modal) => {
-                modal.style.display = 'block';
-                pageContent.classList.add('blur');
+                if (modal) {
+                    modal.style.display = 'block';
+                    pageContent?.classList.add('blur');
+                }
             };
 
-            const closeModal = (modal) => {
-                modal.style.display = 'none';
-                pageContent.classList.remove('blur');
+            const closeModal = (modalId) => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                    pageContent?.classList.remove('blur');
+                }
             };
 
-            // Add Event Listeners
-            addResidentBtn?.addEventListener('click', () => openModal(residentModal));
-            closeResidentModal?.addEventListener('click', () => closeModal(residentModal));
-            closeScheduleModal?.addEventListener('click', () => closeModal(scheduleModal));
-            closeEditModal?.addEventListener('click', () => closeModal(editModal));
-            cancelSchedModal?.addEventListener('click', () => closeModal(scheduleModal));
-            closeDeleteModal?.addEventListener('click', () => closeModal(deleteModal));
+            // Close search modal
+            const closeSearchModal = () => {
+                modals.resident.style.display = 'none';
+                pageContent?.classList.remove('blur');
+            };
 
-            window.addEventListener('click', (event) => {
-                if (event.target === scheduleModal) closeModal(scheduleModal);
-                if (event.target === editModal) closeModal(editModal);
-                if (event.target === deleteModal) closeModal(deleteModal);
-                if (event.target === residentModal) closeModal(residentModal);
-            });
+            const bindModalCloseButtons = () => {
+                // Close modal when clicking on close button (x)
+                document.querySelectorAll('.modal .close').forEach((btn) => {
+                    btn.addEventListener('click', (event) => {
+                        const modal = event.target.closest('.modal');
+                        closeModal(modal.id);
+                    });
+                });
 
-            // Search Residents
+                // Close modal when clicking on the Cancel button (for schedule modal)
+                document.querySelectorAll('.btn-cancel').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const modal = btn.closest('.modal');
+                        closeModal(modal.id);
+                    });
+                });
+
+                // Close the Search Modal when clicking on the close button
+                const closeSearchButton = document.getElementById('closeModal');
+                if (closeSearchButton) {
+                    closeSearchButton.addEventListener('click', closeSearchModal);
+                }
+            };
+
+            const initializeModals = () => {
+                window.addEventListener('click', (event) => {
+                    Object.values(modals).forEach((modal) => {
+                        if (event.target === modal) closeModal(modal.id);
+                    });
+                });
+            };
+
+            // Resident Search
             residentSearch?.addEventListener('input', () => {
                 const query = residentSearch.value.trim();
-                if (query.length > 2) {
+                if (query.length >= 3) {
                     fetch(`/Brgy Zone 1/search-residents.php?q=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
-                        .then(data => {
+                        .then((response) => response.json())
+                        .then((data) => {
                             residentSearchResults.innerHTML = '';
-
-                            // Check if the server returned an error
                             if (data.error) {
                                 const errorDiv = document.createElement('div');
                                 errorDiv.textContent = data.error;
-                                errorDiv.classList.add('error-message'); // Add a class for styling
                                 residentSearchResults.appendChild(errorDiv);
-                                confirmResidentBtn.disabled = true;
-                                return;
+                            } else {
+                                data.forEach((resident) => {
+                                    const div = document.createElement('div');
+                                    div.textContent = resident.fullname;
+                                    div.dataset.residentId = resident.id;
+                                    div.addEventListener('click', () => {
+                                        selectedResidentId = resident.id;
+                                        selectedResidentFullname = resident.fullname; // Store the selected fullname
+                                        openModal(modals.schedule); // Open the schedule modal
+                                        closeModal('residentModal');
+                                        pageContent?.classList.add('blur');
+                                    });
+                                    residentSearchResults.appendChild(div);
+                                });
                             }
-
-                            // Populate search results with residents
-                            data.forEach(resident => {
-                                const div = document.createElement('div');
-                                div.textContent = resident.fullname;
-                                div.dataset.residentId = resident.id;
-                                div.addEventListener('click', () => {
-                                    selectedResidentId = resident.id;
-                                    residentSearchResults.querySelectorAll('div').forEach(node => node.classList.remove('selected'));
-                                    div.classList.add('selected');
-                                    confirmResidentBtn.disabled = false;
-                                });
-                                residentSearchResults.appendChild(div);
-                            });
                         })
-                        .catch(err => console.error("Error fetching residents:", err));
+                        .catch((err) => {
+                            console.error('Error fetching residents:', err);
+                            const errorDiv = document.createElement('div');
+                            errorDiv.textContent = 'An error occurred while searching. Please try again.';
+                            residentSearchResults.innerHTML = '';
+                            residentSearchResults.appendChild(errorDiv);
+                        });
                 } else {
-                    residentSearchResults.innerHTML = '';
+                    residentSearchResults.innerHTML = ''; // Clear results if query is too short
                 }
             });
 
+            // Schedule Form Submission
+            scheduleForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
 
-            // Confirm Resident Selection
-            confirmResidentBtn?.addEventListener('click', () => {
-                if (selectedResidentId) {
-                    fetch('/Brgy Zone 1/add-resident.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                residentId: selectedResidentId
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(resident => {
-                            const newRow = `
-                        <tr>
-                            <td>${resident.fullname}</td>
-                            <td>${resident.email}</td>
-                            <td>Eligible</td>
-                            <td>
-                                <button class='btn-sched' data-resident-id='${resident.id}'>Schedule</button>
-                            </td>
-                        </tr>
-                    `;
-                            residentTableBody.insertAdjacentHTML('beforeend', newRow);
-                            closeModal(residentModal);
-                            bindActionButtons();
-                        })
-                        .catch(err => console.error("Error adding resident:", err));
+                if (!selectedResidentFullname || !selectedResidentId) {
+                    alert('Please select a resident from the search first!');
+                    return;
                 }
+
+                const formData = new FormData(scheduleForm);
+                formData.append('resident_id', selectedResidentId); // Resident ID from selected search
+                formData.append('fullname', selectedResidentFullname); // Fullname of selected resident
+                formData.append('items', JSON.stringify(getSelectedItems())); // Get selected items and pass as JSON string
+
+                fetch('/Brgy Zone 1/add-schedule.php', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            alert('Schedule successfully created!');
+                            location.reload(); // Refresh the page or update dynamically
+                        } else {
+                            alert(data.error || 'An error occurred.');
+                        }
+                    })
+                    .catch((err) => {
+                        console.error('Error submitting schedule:', err);
+                        alert('There was an error while submitting the schedule. Please try again.');
+                    });
             });
 
-            // Bind Buttons for Actions
-            const bindActionButtons = () => {
-                document.querySelectorAll('.btn-sched').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const residentId = e.target.getAttribute('data-resident-id');
-                        document.getElementById('resident_id').value = residentId; // Assuming an input with this ID exists
-                        openModal(scheduleModal);
-                    });
+            // Helper function to gather selected items
+            const getSelectedItems = () => {
+                const items = {};
+                suppliesList.querySelectorAll('input[type="number"]').forEach((input) => {
+                    if (input.value > 0) {
+                        items[input.name.replace('supply_', '')] = input.value; // Use item ID as key
+                    }
                 });
-
-                document.querySelectorAll('.btn-edit').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const residentId = e.target.getAttribute('data-resident-id');
-                        fetch(`get_resident_assistance.php?resident_id=${residentId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                document.getElementById('edit-resident-id').value = residentId;
-                                document.getElementById('edit-pickup-date').value = data.pickup_date;
-                                Object.entries(data.items || {}).forEach(([itemId, quantity]) => {
-                                    const itemInput = document.getElementById(`edit-item_${itemId}`);
-                                    if (itemInput) itemInput.value = quantity;
-                                });
-                                openModal(editModal);
-                            })
-                            .catch(err => console.error("Error fetching resident data:", err));
-                    });
-                });
-
-                document.querySelectorAll('.btn-delete').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const residentId = e.target.getAttribute('data-resident-id');
-                        document.getElementById('delete-resident-id').value = residentId; // Assuming input with this ID exists
-                        openModal(deleteModal);
-                    });
-                });
+                return items;
             };
 
-            // Initialize
-            bindActionButtons();
+            // Initialization
+            bindModalCloseButtons();
+            initializeModals();
+            addResidentBtn?.addEventListener('click', () => openModal(modals.resident));
+
+            // Fetch inventory items and load them into the modal
+            // Fetch inventory items and load them into the modal
+            const loadSupplies = () => {
+                fetch('/Brgy Zone 1/fetch_inventory.php') // Make sure the PHP file is accessible
+                    .then(response => response.json())
+                    .then(data => {
+                        suppliesList.innerHTML = ''; // Clear existing items
+                        if (data.length > 0) {
+                            data.forEach(supply => {
+                                const supplyDiv = document.createElement('div');
+                                supplyDiv.classList.add('supply-item');
+
+                                const label = document.createElement('label');
+                                label.textContent = `${supply.name} (Available: ${supply.quantity} ${supply.unit})`;
+                                supplyDiv.appendChild(label);
+
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.name = `supply_${supply.id}`;
+                                input.min = 0;
+                                input.max = supply.quantity;
+                                supplyDiv.appendChild(input);
+
+                                suppliesList.appendChild(supplyDiv);
+                            });
+                        } else {
+                            const noSuppliesDiv = document.createElement('div');
+                            noSuppliesDiv.textContent = 'No supplies available.';
+                            suppliesList.appendChild(noSuppliesDiv);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching inventory:', error);
+                        const errorDiv = document.createElement('div');
+                        errorDiv.textContent = 'An error occurred while loading the supplies.';
+                        suppliesList.appendChild(errorDiv);
+                    });
+            };
+            loadSupplies(); // Load inventory supplies when the modal is opened
+
+            const editModal = document.getElementById("editModal");
+            const editForm = document.getElementById("editForm");
+
+            // Event listener for edit buttons
+            document.querySelectorAll(".btn-edit").forEach((button) => {
+                button.addEventListener("click", () => {
+                    // Retrieve data from button attributes
+                    const residentId = button.getAttribute("data-resident-id");
+                    const fullname = button.getAttribute("data-fullname");
+                    const distributionDate = button.getAttribute("data-distribution-date");
+                    const status = button.getAttribute("data-status");
+                    pageContent?.classList.add('blur');
+
+                    // Populate modal fields
+                    document.getElementById("editResidentId").value = residentId;
+                    document.getElementById("editFullname").value = fullname;
+                    document.getElementById("editDistributionDate").value = distributionDate;
+                    document.getElementById("editStatus").value = status;
+
+                    // Fetch and populate supplies for the resident
+                    fetch(`/Brgy Zone 1/fetch_resident_supplies.php?resident_id=${residentId}`)
+                        .then((response) => response.json())
+                        .then((data) => {
+                            const editSuppliesList = document.getElementById("editSuppliesList");
+                            editSuppliesList.innerHTML = ""; // Clear existing items
+
+                            data.supplies.forEach((supply) => {
+                                const supplyDiv = document.createElement("div");
+                                supplyDiv.classList.add("supply-item");
+
+                                const label = document.createElement("label");
+                                label.textContent = `${supply.name} (Available: ${supply.available} ${supply.unit})`;
+                                supplyDiv.appendChild(label);
+
+                                const input = document.createElement("input");
+                                input.type = "number";
+                                input.name = `supply_${supply.id}`;
+                                input.min = 0;
+                                input.max = supply.available;
+                                input.value = supply.quantity || 0; // Prefill if available
+                                supplyDiv.appendChild(input);
+
+                                editSuppliesList.appendChild(supplyDiv);
+                            });
+                        });
+
+                    // Show the edit modal
+                    editModal.style.display = "block";
+                });
+            });
+
+            // Close modal
+            document.querySelector(".btn-cancel").addEventListener("click", () => {
+                editModal.style.display = "none";
+            });
+
+            // Handle form submission
+            editForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(editForm);
+                formData.append(
+                    "items",
+                    JSON.stringify(
+                        [...document.querySelectorAll("#editSuppliesList input")].reduce((items, input) => {
+                            if (input.value > 0) {
+                                items[input.name.replace("supply_", "")] = parseInt(input.value, 10);
+                            }
+                            return items;
+                        }, {})
+                    )
+                );
+
+                fetch("/Brgy Zone 1/edit-schedule.php", {
+                        method: "POST",
+                        body: formData,
+                    })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            alert("Schedule updated successfully!");
+                            location.reload();
+                        } else {
+                            alert(data.error || "An error occurred.");
+                        }
+                    })
+                    .catch((err) => console.error("Error:", err));
+            });
+
+        });
+
+        document.querySelectorAll(".btn-delete").forEach((button) => {
+            button.addEventListener("click", () => {
+                // Get the resident ID from the button
+                const residentId = button.getAttribute("data-resident-id");
+
+                // Populate the hidden input in the delete modal
+                document.getElementById("deleteResidentId").value = residentId;
+
+                // Show the delete modal
+                const deleteModal = document.getElementById("deleteModal");
+                deleteModal.style.display = "block";
+            });
+        });
+
+        // Close modal function
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        // Handle delete form submission
+        document.getElementById("deleteForm").addEventListener("submit", (event) => {
+            event.preventDefault(); // Prevent form submission
+
+            const residentId = document.getElementById("deleteResidentId").value;
+
+            // Send delete request to the server
+            fetch("/Brgy Zone 1/delete-schedule.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        resident_id: residentId
+                    }),
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        alert("Schedule deleted successfully.");
+                        closeModal("deleteModal");
+                        // Optionally refresh the table to reflect the deletion
+                        location.reload();
+                    } else {
+                        alert(`Failed to delete schedule: ${data.error}`);
+                    }
+                })
+                .catch((error) => {
+                    alert(`Error: ${error.message}`);
+                });
         });
     </script>
+
 </body>
 <!-- Logout Confirmation Modal -->
 <div id="logout-modal" class="logout-modal">
