@@ -2849,3 +2849,52 @@ body.account-info-page {
         padding: 15px;
     }
 }
+
+
+
+/* Search Bar Styling */
+.search-container {
+  margin-bottom: 15px;
+}
+
+#searchBar {
+  width: 30%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+
+/* Pagination Styling */
+#paginationControls {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+#paginationControls button {
+  padding: 8px 14px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#paginationControls button:hover {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+#paginationControls button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  pointer-events: none;
+}
