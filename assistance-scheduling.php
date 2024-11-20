@@ -144,6 +144,79 @@ require 'db_connect.php'; ?>
         .btn-add:hover {
             background: #0056b3;
         }
+
+        /* Dropdown structure */
+        .arrow-dropdown {
+            position: relative;
+        }
+
+        .arrow-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .arrow-dropdown-content {
+            display: none;
+            /* Hidden by default */
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background-color: #78B3CE;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            min-width: 160px;
+            z-index: 1;
+        }
+
+        .arrow-toggle {
+            margin-left: auto;
+        }
+
+        /* Main content section */
+        .assistance-history-content {
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        /* Table container */
+        .table-wrapper {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header h3 {
+            font-size: 1.5rem;
+            color: #555;
+            text-align: center;
+            margin-bottom: 20px;
+            margin-top: 0;
+            text-align: left;
+        }
+
+        /* Table header */
+        .table-header-section {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            color: #333;
+            font-weight: bold;
+        }
+
+
+        /* Mobile responsiveness */
+        @media screen and (max-width: 768px) {
+
+            .professional-table,
+            .professional-table th,
+            .professional-table td {
+                font-size: 12px;
+            }
+
+            .table-wrapper {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 
@@ -169,7 +242,16 @@ require 'db_connect.php'; ?>
                         </div>
                     </li>
                     <li><a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a></li>
-                    <li class="nav-item active"><a href="assistance-scheduling.php"><i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling</a></li>
+                    <!-- Assistance Scheduling Dropdown (onclick) -->
+                    <li class="arrow-dropdown" id="assistance-scheduling-dropdown">
+                        <div class="arrow-dropdown-toggle" onclick="toggleDropdown('assistance-scheduling-dropdown')">
+                            <a href="assistance-scheduling.php" class="nav-item active" style="flex-grow: 1; margin-right:0px;"><i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling</a>
+                            <i class="fas fa-chevron-down arrow-toggle"></i>
+                        </div>
+                        <div class="arrow-dropdown-content">
+                            <a href="assistance-history.php"><i class="fa-solid fa-history"></i> Assistance History</a>
+                        </div>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -246,8 +328,8 @@ require 'db_connect.php'; ?>
 
             </header>
 
-            <section class="main-content">
-                <div class="table-container">
+            <section class="assistance-history-content">
+                <div class="table-wrapper">
                     <div class="table-header">
                         <h3>Scheduled Residents</h3>
                         <button id="addResidentBtn" class="btn-add">Add Resident</button>
@@ -265,31 +347,32 @@ require 'db_connect.php'; ?>
                             <?php
                             require_once 'db_connect.php';
 
-                            // Fetch data from schedule_residents with the latest schedule details
+                            // Fetch data from schedule_residents with the latest schedule details, excluding those with 'received' status
                             $sql = "
-                    SELECT 
-                        sr.id,
-                        sr.fullname,
-                        sa.pickup_date AS distribution_datetime,
-                        COALESCE(
-                            CASE
-                                WHEN sr.assistance_status = 'for pickup' THEN 'For Pickup'
-                                WHEN sr.assistance_status = 'received' THEN 'Received'
-                                ELSE 'Eligible'
-                            END,
-                            'Eligible'
-                        ) AS assistance_status
-                    FROM schedule_residents sr
-                    LEFT JOIN (
-                        SELECT id, resident_id, pickup_date
-                        FROM scheduled_assistance
-                        WHERE id IN (
-                            SELECT MAX(id) 
-                            FROM scheduled_assistance 
-                            GROUP BY resident_id
-                        )
-                    ) sa ON sr.id = sa.resident_id
-                ";
+    SELECT 
+        sr.id,
+        sr.fullname,
+        sa.pickup_date AS distribution_datetime,
+        COALESCE(
+            CASE
+                WHEN sr.assistance_status = 'for pickup' THEN 'For Pickup'
+                WHEN sr.assistance_status = 'received' THEN 'Received'
+                ELSE 'Eligible'
+            END,
+            'Eligible'
+        ) AS assistance_status
+    FROM schedule_residents sr
+    LEFT JOIN (
+        SELECT id, resident_id, pickup_date
+        FROM scheduled_assistance
+        WHERE id IN (
+            SELECT MAX(id) 
+            FROM scheduled_assistance 
+            GROUP BY resident_id
+        )
+    ) sa ON sr.id = sa.resident_id
+    WHERE sr.assistance_status != 'received'  -- Exclude residents with 'received' status
+    ";
 
                             $result = $conn->query($sql);
 
@@ -301,24 +384,21 @@ require 'db_connect.php'; ?>
                                     echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
                                     echo "<td>";
 
-                                    // Only show the Edit button if the status is "For Pickup"
-                                    if ($row['assistance_status'] === 'For Pickup') {
-                                        echo "<button 
-                                                class='btn-edit' 
-                                                data-resident-id='" . htmlspecialchars($row['id']) . "' 
-                                                data-fullname='" . htmlspecialchars($row['fullname']) . "' 
-                                                data-distribution-date='" . htmlspecialchars($row['distribution_datetime']) . "' 
-                                                data-status='" . htmlspecialchars($row['assistance_status']) . "'>
-                                                Edit
-                                              </button>";
+                                    echo "<button 
+                        class='btn-edit' 
+                        data-resident-id='" . htmlspecialchars($row['id']) . "' 
+                        data-fullname='" . htmlspecialchars($row['fullname']) . "' 
+                        data-distribution-date='" . htmlspecialchars($row['distribution_datetime']) . "' 
+                        data-status='" . htmlspecialchars($row['assistance_status']) . "'>
+                        Edit
+                      </button>";
 
-                                        // Delete button
-                                        echo "<button 
-                                            class='btn-delete' 
-                                            data-resident-id='" . htmlspecialchars($row['id']) . "'>
-                                            Delete
-                                          </button>";
-                                    }
+                                    // Delete button
+                                    echo "<button 
+                    class='btn-delete' 
+                    data-resident-id='" . htmlspecialchars($row['id']) . "'>
+                    Delete
+                  </button>";
 
 
                                     echo "</td>";
@@ -328,10 +408,10 @@ require 'db_connect.php'; ?>
                                 echo "<tr><td colspan='4'>No residents found.</td></tr>";
                             }
 
-
                             $conn->close();
                             ?>
                         </tbody>
+
                     </table>
                 </div>
             </section>
@@ -425,6 +505,22 @@ require 'db_connect.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script src="js/admin-dashboard.js"></script>
     <script>
+        // Function to toggle the dropdown menu
+        function toggleDropdown(dropdownId) {
+            const dropdownContent = document.querySelector(`#${dropdownId} .arrow-dropdown-content`);
+            const allDropdowns = document.querySelectorAll('.arrow-dropdown .arrow-dropdown-content');
+
+            // Close all dropdowns
+            allDropdowns.forEach(function(content) {
+                if (content !== dropdownContent) {
+                    content.style.display = 'none';
+                }
+            });
+
+            // Toggle the clicked dropdown
+            dropdownContent.style.display = (dropdownContent.style.display === 'block') ? 'none' : 'block';
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             // Notification Dropdown
             const notificationBell = document.getElementById('notification-bell');
@@ -527,7 +623,7 @@ require 'db_connect.php'; ?>
             const initializeModals = () => {
                 window.addEventListener('click', (event) => {
                     Object.values(modals).forEach((modal) => {
-                        if (event.target === modal) closeModal(modal.id);
+                        // if (event.target === modal) closeModal(modal.id);
                     });
                 });
             };

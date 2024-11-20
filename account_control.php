@@ -1,9 +1,9 @@
-
 <?php include 'check_admin.php'; ?>
 
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+
 <body>
 
 
@@ -23,23 +24,23 @@
             </div>
             <nav>
                 <ul>
-        <li><a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a></li>
-        <li><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
-        <li class="arrow-dropdown">
-    <div class="arrow-dropdown-toggle" id="account-control-link">
-        <a href="account_control.php" class="nav-item active" style="flex-grow: 1;">
-            <i class="fas fa-user-cog mr-2"></i> Account Control Panel Register
-        </a>
-        <i class="fas fa-chevron-down arrow-toggle"></i>
-    </div>
-    <div class="arrow-dropdown-content">
-        <a href="account-management.php"><i class="fa-solid fa-file-invoice"></i> Account Management</a>
-    </div>
-</li>
-        <li><a href="event-control-system.php"><i class="fas fa-calendar-alt"></i> Event Control System</a></li>
-        <li><a href="assistance-scheduling.php"><i class="fas fa-calendar-check"></i> Assistance Scheduling</a></li>
-    </ul>
+                    <li><a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a></li>
+                    <li><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
+                    <li class="arrow-dropdown">
+                        <div class="arrow-dropdown-toggle" id="account-control-link">
+                            <a href="account_control.php" class="nav-item active" style="flex-grow: 1;">
+                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel Register
+                            </a>
+                            <i class="fas fa-chevron-down arrow-toggle"></i>
+                        </div>
+                        <div class="arrow-dropdown-content">
+                            <a href="account-management.php"><i class="fa-solid fa-file-invoice"></i> Account Management</a>
+                        </div>
+                    </li>
+                    <li><a href="event-control-system.php"><i class="fas fa-calendar-alt"></i> Event Control System</a></li>
+                    <li><a href="assistance-scheduling.php"><i class="fas fa-calendar-check"></i> Assistance Scheduling</a></li>
+                </ul>
 
             </nav>
         </aside>
@@ -51,7 +52,7 @@
                     <div class="dropdown">
                         <i class="fas fa-user-circle"></i>
                         <div class="dropdown-menu">
-                        <a href="account-information.php" id="view-profile" class="dropdown-item">
+                            <a href="account-information.php" id="view-profile" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 <span>Account Info</span>
                             </a>
@@ -62,7 +63,7 @@
                             <a href="login.php" id="logout-link" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
-                            </a>                            
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -89,7 +90,7 @@
         </main>
     </div>
     <script src="js/admin-dashboard.js"></script>
-    
+
     <!-- Logout Confirmation Modal -->
     <div id="logout-modal" class="modal">
         <div class="modal-content">
@@ -100,4 +101,5 @@
         </div>
     </div>
 </body>
+
 </html>

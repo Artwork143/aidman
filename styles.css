@@ -2761,3 +2761,91 @@ body.account-info-page {
   }
 }
 
+  /* Main content section */
+  .assistance-history-content {
+    padding: 20px;
+    margin-top: 20px;
+}
+
+/* Table container */
+.table-wrapper {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Table header */
+.table-header-section {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #333;
+    font-weight: bold;
+}
+
+/* Custom class for the professional table */
+.professional-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    text-align: left;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.professional-table th,
+.professional-table td {
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
+}
+
+.professional-table th {
+    background-color: #3498db;
+    color: #fff;
+    font-weight: 600;
+}
+
+.professional-table td {
+    background-color: #ecf0f1;
+}
+
+.professional-table td a {
+    text-decoration: none;
+    color: #3498db;
+}
+
+.professional-table td a:hover {
+    text-decoration: underline;
+}
+
+.professional-table tr:hover td {
+    background-color: #f1f4f7;
+}
+
+.no-record {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.received-items {
+    text-align: left;
+}
+
+/* Mobile responsiveness */
+@media screen and (max-width: 768px) {
+
+    .professional-table,
+    .professional-table th,
+    .professional-table td {
+        font-size: 12px;
+    }
+
+    .table-wrapper {
+        padding: 15px;
+    }
+}

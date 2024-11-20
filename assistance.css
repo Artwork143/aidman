@@ -30,7 +30,7 @@ section.main-content h3 {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin: 20px auto; /* Centers the container */
-    width: 800px; /* Set a max-width to avoid stretching */
+    width: 975px; /* Set a max-width to avoid stretching */
 }
 
 .table-container table {
@@ -223,6 +223,7 @@ table tbody tr:hover {
         font-size: 1.3rem;
     }
     .table-container {
+        max-width: 975px;
         padding: 15px;
     }
     table, table thead, table tbody, table th, table td, table tr {

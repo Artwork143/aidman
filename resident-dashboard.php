@@ -81,6 +81,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resident Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assistance.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.css">
@@ -130,6 +131,130 @@ $conn->close();
 
         .dropdown-item:hover {
             background-color: #f1f1f1;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Modal Container */
+        .modal-container {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            top: 50%;
+            /* Align to center vertically */
+            left: 50%;
+            /* Align to center horizontally */
+            transform: translate(-50%, -50%);
+            /* Shift the modal back by 50% of its own height/width */
+            z-index: 1050;
+            width: 100%;
+            max-width: 28rem;
+            margin: auto;
+            padding: 1.5rem;
+            position: fixed;
+        }
+
+        /* Close Button */
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: red;
+            border: none;
+            font-size: 1.25rem;
+            color: white;
+            /* Gray */
+            cursor: pointer;
+            transition: color 0.3s ease;
+
+        }
+
+        .modal-close-btn:hover {
+            background-color: firebrick;
+            /* Darker Gray */
+        }
+
+        /* Modal Header */
+        .modal-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            /* Gray-800 */
+            margin-bottom: 1rem;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-label {
+            font-weight: bold;
+            color: #4b5563;
+            /* Gray-700 */
+        }
+
+        .modal-value {
+            color: #6b7280;
+            /* Gray-600 */
+        }
+
+        .modal-supplies-title {
+            font-weight: 500;
+            color: #4b5563;
+            /* Gray-700 */
+            margin-top: 1rem;
+        }
+
+        .modal-supply-list {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            color: #6b7280;
+            /* Gray-600 */
+        }
+
+        /* Modal Actions */
+        .modal-actions {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .modal-print-btn {
+            display: block;
+            width: 100%;
+            background-color: #3b82f6;
+            /* Blue-500 */
+            color: #ffffff;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-print-btn:hover {
+            background-color: #2563eb;
+            /* Blue-600 */
+        }
+
+        .modal-note {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            /* Gray-500 */
+            margin-top: 0.5rem;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -234,6 +359,38 @@ $conn->close();
         </div>
 
 
+
+
+    </div>
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <!-- Close Button -->
+            <button id="close-receipt-modal" class="modal-close-btn">&times;</button>
+
+            <!-- Modal Header -->
+            <h2 class="modal-header">Receipt Details</h2>
+
+            <!-- Modal Content -->
+            <div id="receipt-content" class="modal-content">
+                <p>
+                    <strong class="modal-label">Resident Name:</strong>
+                    <span id="resident-name" class="modal-value"></span>
+                </p>
+                <p>
+                    <strong class="modal-label">Scheduled Pickup Date:</strong>
+                    <span id="receipt-pickup-date" class="modal-value"></span>
+                </p>
+                <p class="modal-supplies-title">Supplies:</p>
+                <ul id="receipt-supply-list" class="modal-supply-list"></ul>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="modal-actions">
+                <button id="print-receipt" class="modal-print-btn">Print Receipt</button>
+                <p class="modal-note">Or take a screenshot for your records.</p>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
@@ -317,28 +474,26 @@ $conn->close();
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Notification items
             const notificationItems = document.querySelectorAll('.dropdown-item[data-id]');
-            const confirmAssistance = document.getElementById('confirm-assistance');
-            const notificationModal = document.getElementById('notification-modal');
-            const pickupDate = document.getElementById('pickup-date');
-            const supplyList = document.getElementById('supply-list');
-            const closeAssistance = document.getElementById('close-assistance');
-            const cancelAssistance = document.getElementById('cancel-assistance');
+            const receiptModal = document.getElementById('receipt-modal');
+            const closeReceiptModal = document.getElementById('close-receipt-modal');
+            const printReceipt = document.getElementById('print-receipt');
 
-            let assistanceDetails = null; // To store the fetched assistance details
-            let notificationId = null; // To store the current notification_id
+            const residentNameElem = document.getElementById('resident-name');
+            const receiptPickupDateElem = document.getElementById('receipt-pickup-date');
+            const receiptSupplyListElem = document.getElementById('receipt-supply-list');
 
-            notificationItems.forEach(item => {
+            notificationItems.forEach((item) => {
                 item.addEventListener('click', function() {
-                    notificationId = this.getAttribute('data-id'); // Store the notification_id when clicked
+                    const notificationId = this.getAttribute('data-id');
 
                     if (!notificationId) {
                         alert('Notification ID is missing.');
                         return;
                     }
 
-                    console.log(`Fetching details for notification_id: ${notificationId}`);
-
+                    // Fetch details for the selected notification
                     fetch('fetch-assistance-details.php', {
                             method: 'POST',
                             headers: {
@@ -346,135 +501,56 @@ $conn->close();
                             },
                             body: `notification_id=${encodeURIComponent(notificationId)}`,
                         })
-                        .then(response => response.text())
-                        .then(rawData => {
-                            console.log('Raw Data:', rawData);
-
-                            const data = JSON.parse(rawData);
-
+                        .then((response) => response.json())
+                        .then((data) => {
                             if (data.status === 'success') {
-                                assistanceDetails = data; // Store details for use in confirmation
-                                pickupDate.textContent = data.pickup_date;
+                                // Populate modal with data
+                                residentNameElem.textContent = data.resident_fullname || 'N/A';
+                                receiptPickupDateElem.textContent = data.pickup_date || 'N/A';
 
-                                supplyList.innerHTML = ''; // Clear existing list
-                                data.supplies.forEach(supply => {
+                                // Populate supplies
+                                receiptSupplyListElem.innerHTML = '';
+                                data.supplies.forEach((supply) => {
                                     const listItem = document.createElement('li');
                                     listItem.textContent = `${supply.quantity} ${supply.unit} of ${supply.item_name}`;
-                                    supplyList.appendChild(listItem);
+                                    receiptSupplyListElem.appendChild(listItem);
                                 });
 
-                                notificationModal.style.display = 'block';
+                                // Show modal
+                                receiptModal.style.display = 'block';
                             } else {
-                                alert(data.message || 'Failed to fetch assistance details.');
+                                alert(data.message || 'Failed to fetch details.');
                             }
                         })
-                        .catch(error => {
-                            console.error('Fetch error:', error);
-                            alert('An error occurred while fetching assistance details.');
+                        .catch((error) => {
+                            console.error('Error:', error);
+                            alert('An error occurred while fetching details.');
                         });
                 });
             });
 
-            // Confirm Assistance - Deduct quantities
-            confirmAssistance.addEventListener('click', function() {
-                if (!assistanceDetails || !assistanceDetails.supplies) {
-                    alert('No assistance details available to confirm.');
-                    return;
-                }
-
-                const deductionData = {
-                    notification_id: notificationId, // Include the notification_id in the request
-                    supplies: assistanceDetails.supplies.map(supply => ({
-                        item_id: supply.item_id, // Assuming `item_id` is available in the response
-                        quantity: supply.quantity
-                    }))
-                };
-
-                fetch('deduct-inventory.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(deductionData),
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.status === 'success') {
-                            alert('Assistance confirmed and inventory updated.');
-                            notificationModal.style.display = 'none';
-                            location.reload();
-                        } else {
-                            alert(result.message || 'Failed to confirm assistance.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error confirming assistance:', error);
-                        alert('An error occurred while confirming assistance.');
-                    });
+            // Close modal
+            closeReceiptModal.addEventListener('click', () => {
+                receiptModal.style.display = 'none';
             });
 
-            // Close modal on cancel or close
-            cancelAssistance.onclick = closeAssistance.onclick = function() {
-                notificationModal.style.display = 'none';
-            };
+            // Print receipt
+            printReceipt.addEventListener('click', () => {
+                const printContent = document.getElementById('receipt-content').innerHTML;
+                const newWindow = window.open('', '', 'width=600,height=400');
+                newWindow.document.write('<html><head><title>Print Receipt</title></head><body>');
+                newWindow.document.write(printContent);
+                newWindow.document.write('</body></html>');
+                newWindow.document.close();
+                newWindow.print();
+            });
 
-            // Close the modal if clicking outside of it
+            // Close modal when clicking outside of it
             window.addEventListener('click', (event) => {
-                if (event.target === notificationModal) {
-                    notificationModal.style.display = 'none';
+                if (event.target === receiptModal) {
+                    receiptModal.style.display = 'none';
                 }
             });
-        });
-
-        // Submit the edit form and show a Swal.fire success message upon successful update
-        document.getElementById('confirm-assistance').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission
-
-            // Create a FormData object to send the form data
-            let formData = new FormData(this);
-
-            // Send the form data via AJAX (fetch)
-            fetch('deduct-inventory.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show success message with Swal.fire
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: data.success,
-                            confirmButtonText: 'OK'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // Optionally, close the modal or reload the page
-                                document.getElementById('notification-modal').style.display = 'none';
-                                document.getElementById('pageContent').classList.remove('blur');
-                                // Optionally, reload the page to reflect the updates
-                                // location.reload();
-                            }
-                        });
-                    } else if (data.error) {
-                        // Handle error response from PHP
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: data.error,
-                            confirmButtonText: 'OK'
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Something went wrong. Please try again.',
-                        confirmButtonText: 'OK'
-                    });
-                });
         });
     </script>
 
