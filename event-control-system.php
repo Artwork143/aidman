@@ -151,24 +151,42 @@ $conn->close(); // Close the database connection
             </div>
             <nav>
                 <ul>
-                    <li><a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a></li>
-                    <li><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
+                    <li>
+                        <a href="admin-dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="aid-dashboard.php"><i class="fas fa-chart-line"></i> Aid Priority Ranking</a>
+                    </li>
+                    <li>
+                        <a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a>
+                    </li>
                     <li class="arrow-dropdown">
                         <div class="arrow-dropdown-toggle" id="account-control-link">
-                            <a href="account_control.php" style="flex-grow: 1;">
-                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel Register
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel
                             </a>
                             <i class="fas fa-chevron-down arrow-toggle"></i>
                         </div>
-                        <div class="arrow-dropdown-content" id="dropdown-content">
-                            <a href="account-management.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'account-management.php' ? 'active' : ''; ?>" id="account-management-link">
-                                <i class="fa-solid fa-file-invoice"></i> Account Management
-                            </a>
+                        <div class="arrow-dropdown-content">
+                            <a href="account_control.php"><i class="fa-solid fa-user-plus"></i> Register Account</a>
+                            <a href="account-management.php"><i class="fa-solid fa-file-invoice"></i> Account Management</a>
                         </div>
                     </li>
-                    <li class="nav-item active"><a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a></li>
-                    <li><a href="assistance-scheduling.php"><i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling</a></li>
+                    <li class="nav-item active">
+                        <a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a>
+                    </li>
+                    <li class="arrow-dropdown-assistance">
+                        <div class="arrow-dropdown-toggle-assistance" id="assistance-scheduling-link">
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling
+                            </a>
+                            <i class="fas fa-chevron-down arrow-toggle-assistance"></i>
+                        </div>
+                        <div class="arrow-dropdown-content-assistance">
+                            <a href="assistance-scheduling.php"><i class="fa-solid fa-calendar-plus"></i> Schedule Assistance</a>
+                            <a href="assistance-history.php"><i class="fa-solid fa-history"></i> Assistance History</a>
+                        </div>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -366,7 +384,7 @@ $conn->close(); // Close the database connection
         });
 
 
-        
+
         let currentSlide = 0;
 
         function showSlide(index) {
@@ -413,6 +431,26 @@ $conn->close(); // Close the database connection
                 }
             });
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Dropdown behavior for Account Control Panel
+            const accountDropdownToggle = document.querySelector(".arrow-dropdown-toggle-account");
+            if (accountDropdownToggle) {
+                accountDropdownToggle.addEventListener("click", function() {
+                    const parent = this.closest(".arrow-dropdown-account");
+                    parent.classList.toggle("active");
+                });
+            }
+
+            // Dropdown behavior for Assistance Scheduling
+            const assistanceDropdownToggle = document.querySelector(".arrow-dropdown-toggle-assistance");
+            if (assistanceDropdownToggle) {
+                assistanceDropdownToggle.addEventListener("click", function() {
+                    const parent = this.closest(".arrow-dropdown-assistance");
+                    parent.classList.toggle("active");
+                });
+            }
+        });
     </script>
     <script src="js/admin-dashboard.js"></script>
 </body>

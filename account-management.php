@@ -1,9 +1,9 @@
-
 <?php include 'check_admin.php'; ?>
 
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,7 @@
     <!-- SweetAlert CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
+
 <body>
 
 
@@ -32,20 +33,33 @@
                     <li><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
                     <li class="arrow-dropdown">
                         <div class="arrow-dropdown-toggle" id="account-control-link">
-                            <a href="account_control.php" style="flex-grow: 1;">
-                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel Register
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel
                             </a>
                             <i class="fas fa-chevron-down arrow-toggle"></i>
                         </div>
-                        <div class="arrow-dropdown-content" id="dropdown-content">
-                            <a href="account-management.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'account-management.php' ? 'active' : ''; ?>" id="account-management-link">
-                                <i class="fa-solid fa-file-invoice"></i> Account Management
-                            </a>
+                        <div class="arrow-dropdown-content">
+                            <a href="account_control.php"><i class="fa-solid fa-user-plus"></i> Register Account</a>
+                            <a href="account-management.php"  class="nav-item active"><i class="fa-solid fa-file-invoice"></i> Account Management</a>
                         </div>
                     </li>
-                    <li><a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a></li>
-                    <li><a href="assistance-scheduling.php"><i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling</a></li>
+                    <li>
+                        <a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a>
+                    </li>
+                    <li class="arrow-dropdown-assistance">
+                        <div class="arrow-dropdown-toggle-assistance" id="assistance-scheduling-link">
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling
+                            </a>
+                            <i class="fas fa-chevron-down arrow-toggle-assistance"></i>
+                        </div>
+                        <div class="arrow-dropdown-content-assistance">
+                            <a href="assistance-scheduling.php"><i class="fa-solid fa-calendar-plus"></i> Schedule Assistance</a>
+                            <a href="assistance-history.php"><i class="fa-solid fa-history"></i> Assistance History</a>
+                        </div>
+                    </li>
                 </ul>
+
             </nav>
         </aside>
         <main>
@@ -56,7 +70,7 @@
                     <div class="dropdown">
                         <i class="fas fa-user-circle"></i>
                         <div class="dropdown-menu">
-                        <a href="account-information.php" id="view-profile" class="dropdown-item">
+                            <a href="account-information.php" id="view-profile" class="dropdown-item">
                                 <i class="fas fa-user"></i>
                                 <span>Account Info</span>
                             </a>
@@ -67,12 +81,12 @@
                             <a href="login.php" id="logout-link" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
-                            </a>                            
+                            </a>
                         </div>
                     </div>
                 </div>
             </header>
-           
+
             <?php
             // Connect to the database
             $servername = "localhost";
@@ -112,7 +126,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Numbers</th> 
+                            <th>Numbers</th>
                             <th>Fullname</th>
                             <th>Username</th>
                             <th>Email</th>
@@ -122,25 +136,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php 
+                        <?php
                         $count = $offset + 1; // Start counting from the current offset + 1
                         while ($user = $result->fetch_assoc()): ?>
-                        <tr>
-                            <td data-label="#"><?php echo $count++; ?></td> <!-- Display the number -->
-                            <td data-label="Fullname"><?php echo htmlspecialchars($user['fullname']); ?></td>
-                            <td data-label="Username"><?php echo htmlspecialchars($user['username']); ?></td>
-                            <td data-label="Email"><?php echo htmlspecialchars($user['email']); ?></td>
-                            <td data-label="Role"><?php echo htmlspecialchars($user['role']); ?></td>
-                            <td data-label="Password">
-                                <span class="password-placeholder">Protected</span>
-                            </td>
-                            <td data-label="Actions">
-                                <div class="action-buttons">
-                                <a href="#" class="edit-button" onclick="confirmEdit(<?php echo $user['id']; ?>)">Edit</a>
-                                    <a href="#" class="delete-button" onclick="confirmDelete(<?php echo $user['id']; ?>)">Delete</a>
-                                </div>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td data-label="#"><?php echo $count++; ?></td> <!-- Display the number -->
+                                <td data-label="Fullname"><?php echo htmlspecialchars($user['fullname']); ?></td>
+                                <td data-label="Username"><?php echo htmlspecialchars($user['username']); ?></td>
+                                <td data-label="Email"><?php echo htmlspecialchars($user['email']); ?></td>
+                                <td data-label="Role"><?php echo htmlspecialchars($user['role']); ?></td>
+                                <td data-label="Password">
+                                    <span class="password-placeholder">Protected</span>
+                                </td>
+                                <td data-label="Actions">
+                                    <div class="action-buttons">
+                                        <a href="#" class="edit-button" onclick="confirmEdit(<?php echo $user['id']; ?>)">Edit</a>
+                                        <a href="#" class="delete-button" onclick="confirmDelete(<?php echo $user['id']; ?>)">Delete</a>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php endwhile; ?>
                     </tbody>
                 </table>
@@ -150,9 +164,9 @@
                     <?php if ($page > 1): ?>
                         <a href="?page=<?php echo $page - 1; ?>" class="prev-button">&lt; Previous</a>
                     <?php endif; ?>
-                    
+
                     <span>Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-                    
+
                     <?php if ($page < $totalPages): ?>
                         <a href="?page=<?php echo $page + 1; ?>" class="next-button">Next &gt;</a>
                     <?php endif; ?>
@@ -171,44 +185,69 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-    function confirmDelete(userId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You are about to delete this user!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Redirect to delete page
-                window.location.href = 'account-manage-delete.php?id=' + userId;
+        function confirmDelete(userId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You are about to delete this user!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to delete page
+                    window.location.href = 'account-manage-delete.php?id=' + userId;
+                }
+            });
+        }
+
+        function confirmEdit(userId) {
+            console.log("Editing user with ID:", userId); // Debug log
+            Swal.fire({
+                title: 'Confirm Edit',
+                text: "Are you sure you want to edit this user?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, proceed!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to the edit page
+                    window.location.href = 'account-manage-edit.php?id=' + userId;
+                }
+            });
+        }
+
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Dropdown behavior for Account Control Panel
+            const accountDropdownToggle = document.querySelector(".arrow-dropdown-toggle");
+            const accountDropdownParent = document.querySelector(".arrow-dropdown");
+
+            if (accountDropdownParent && window.location.pathname.includes("/account-management")) {
+                accountDropdownParent.classList.add("active");
+            }
+
+            if (accountDropdownToggle) {
+                accountDropdownToggle.addEventListener("click", function() {
+                    const parent = this.closest(".arrow-dropdown-account");
+                    parent.classList.toggle("active");
+                });
+            }
+
+            // Dropdown behavior for Assistance Scheduling
+            const assistanceDropdownToggle = document.querySelector(".arrow-dropdown-toggle-assistance");
+            if (assistanceDropdownToggle) {
+                assistanceDropdownToggle.addEventListener("click", function() {
+                    const parent = this.closest(".arrow-dropdown-assistance");
+                    parent.classList.toggle("active");
+                });
             }
         });
-    }
-
-    function confirmEdit(userId) {
-    console.log("Editing user with ID:", userId); // Debug log
-    Swal.fire({
-        title: 'Confirm Edit',
-        text: "Are you sure you want to edit this user?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, proceed!',
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Redirect to the edit page
-            window.location.href = 'account-manage-edit.php?id=' + userId;
-        }
-    });
-}
-
-
     </script>
 
     <script src="js/admin-dashboard.js"></script>
@@ -222,4 +261,5 @@
         <button id="cancel-logout" class="btn">No</button>
     </div>
 </div>
+
 </html>

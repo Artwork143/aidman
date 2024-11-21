@@ -2898,3 +2898,119 @@ body.account-info-page {
   border-color: #007bff;
   pointer-events: none;
 }
+
+/* Styles for Assistance Scheduling */
+.arrow-dropdown-assistance {
+  position: relative;
+}
+
+.arrow-dropdown-content-assistance {
+  display: none;
+  position: relative;
+  padding-left: 20px;
+}
+
+.arrow-dropdown-assistance.active .arrow-dropdown-content-assistance {
+  display: block;
+}
+
+.arrow-dropdown-assistance .arrow-toggle-assistance {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.arrow-dropdown-assistance.active .arrow-toggle-assistance {
+  transform: rotate(180deg);
+}
+
+/* Assistance Scheduling Dropdown Content */
+.arrow-dropdown-content-assistance {
+  display: none;
+  background: linear-gradient(135deg, #4ca1af); /* Match sidebar gradient */
+  padding: 10px;
+  position: relative;
+  z-index: 1;
+  border-radius: 4px;
+  margin-top: 5px;
+  box-shadow: none; /* Remove any box shadow */
+}
+
+.arrow-dropdown-assistance.active .arrow-dropdown-content-assistance {
+  display: block;
+}
+
+/* Assistance Scheduling Toggle */
+.arrow-dropdown-toggle-assistance {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.arrow-toggle-assistance {
+  padding-left: 10px;
+  margin-left: 0px;
+  font-size: 0.8em; /* Slightly smaller */
+  transition: transform 0.3s;
+}
+
+.arrow-dropdown-assistance.active .arrow-toggle-assistance {
+  transform: rotate(180deg);
+  margin-left: 10px;
+  padding-left: 0px;
+}
+
+/* Assistance Scheduling Dropdown Links */
+.arrow-dropdown-content-assistance a {
+  font-size: 0.85em; /* Make the text slightly smaller */
+}
+
+.arrow-dropdown-content-assistance.show {
+  display: block; /* Show when toggled */
+}
+
+
+.notification-bell {
+  position: relative;
+  cursor: pointer;
+}
+
+.notification-bell .badge {
+  position: absolute;
+  top: -10px;
+  right: -12px;
+  height: 7px;
+  width: 7px;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  border: 2px solid white;
+  padding: 5px;
+  font-size: 12px;
+  padding-bottom: 10px;
+}
+
+.dropdown-menu.notifications {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 30px;
+  background-color: white;
+  border: 1px solid #ddd;
+  width: 300px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.dropdown-menu.notifications.show {
+  display: block;
+}
+
+.dropdown-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+}
