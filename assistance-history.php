@@ -121,24 +121,30 @@ require 'db_connect.php'; ?>
                     <li><a href="inventory-dashboard.php"><i class="fas fa-warehouse"></i> Inventory System</a></li>
                     <li class="arrow-dropdown">
                         <div class="arrow-dropdown-toggle" id="account-control-link">
-                            <a href="account_control.php" style="flex-grow: 1;"><i class="fas fa-user-cog mr-2"></i> Account Control Panel Register</a>
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-user-cog mr-2"></i> Account Control Panel
+                            </a>
                             <i class="fas fa-chevron-down arrow-toggle"></i>
                         </div>
                         <div class="arrow-dropdown-content">
+                            <a href="account_control.php"><i class="fa-solid fa-user-plus"></i> Register Account</a>
                             <a href="account-management.php"><i class="fa-solid fa-file-invoice"></i> Account Management</a>
                         </div>
                     </li>
-                    <li><a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a></li>
-                    <!-- Assistance Scheduling Dropdown (onclick) -->
-                    <li class="arrow-dropdown" id="assistance-scheduling-dropdown">
-                        <div class="arrow-dropdown-toggle" onclick="toggleDropdown('assistance-scheduling-dropdown')">
-                            <a href="assistance-scheduling.php" style="flex-grow: 1;"><i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling</a>
-                            <i class="fas fa-chevron-down arrow-toggle"></i>
-                        </div>
-
+                    <li>
+                        <a href="event-control-system.php"><i class="fas fa-calendar-alt fa-lg mr-2"></i> Event Control System</a>
                     </li>
-                    <li class="active" >
-                        <a href="assistance-history.php" style="font-size: 0.85em" class="nav-item active"><i class="fa-solid fa-history"></i> Assistance History</a>
+                    <li class="arrow-dropdown-assistance">
+                        <div class="arrow-dropdown-toggle-assistance" id="assistance-scheduling-link">
+                            <a style="flex-grow: 1;">
+                                <i class="fas fa-calendar-check fa-lg mr-2"></i> Assistance Scheduling
+                            </a>
+                            <i class="fas fa-chevron-down arrow-toggle-assistance"></i>
+                        </div>
+                        <div class="arrow-dropdown-content-assistance">
+                            <a href="assistance-scheduling.php"><i class="fa-solid fa-calendar-plus"></i> Schedule Assistance</a>
+                            <a href="assistance-history.php" class="nav-item active"><i class="fa-solid fa-history"></i> Assistance History</a>
+                        </div>
                     </li>
                 </ul>
             </nav>
@@ -205,7 +211,7 @@ require 'db_connect.php'; ?>
                                 <i class="fas fa-envelope-open"></i>
                                 <span>Inbox</span>
                             </a>
-                            <a href="login.php" id="logout-link" class="dropdown-item">
+                            <a href="login.php" id="logout-link-custom" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>
@@ -216,32 +222,32 @@ require 'db_connect.php'; ?>
 
             </header>
             <section class="assistance-history-content">
-    <div class="table-wrapper">
-        <div class="table-header">
-            <h3>Assistance History</h3>
-            <input type="text" id="searchBar" class="search-container" placeholder="Search Assistance History">
-        
-        </div>
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <h3>Assistance History</h3>
+                        <input type="text" id="searchBar" class="search-container" placeholder="Search Assistance History">
 
-        <!-- Search Bar -->
-        
+                    </div>
 
-        <!-- Assistance History Table -->
-        <table id="assistanceHistoryTable" border="1" cellspacing="0" cellpadding="5">
-            <thead>
-                <tr>
-                    <th>Full Name</th>
-                    <th>Distribution Date/Time</th>
-                    <th>Status</th>
-                    <th>Received Supplies</th>
-                </tr>
-            </thead>
-            <tbody id="assistanceHistoryTableBody">
-                <?php
-                require_once 'db_connect.php';
+                    <!-- Search Bar -->
 
-                // Fetch data from schedule_residents, scheduled_assistance, and scheduled_assistance_items for only 'received' status
-                $sql = "
+
+                    <!-- Assistance History Table -->
+                    <table id="assistanceHistoryTable" border="1" cellspacing="0" cellpadding="5">
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Distribution Date/Time</th>
+                                <th>Status</th>
+                                <th>Received Supplies</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assistanceHistoryTableBody">
+                            <?php
+                            require_once 'db_connect.php';
+
+                            // Fetch data from schedule_residents, scheduled_assistance, and scheduled_assistance_items for only 'received' status
+                            $sql = "
                 SELECT 
                     sr.fullname,
                     sa.pickup_date AS distribution_datetime,
@@ -259,137 +265,212 @@ require 'db_connect.php'; ?>
                 ORDER BY sa.pickup_date DESC
                 ";
 
-                $result = $conn->query($sql);
+                            $result = $conn->query($sql);
 
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo "<tr>";
-                        echo "<td>" . htmlspecialchars($row['fullname']) . "</td>";
-                        echo "<td>" . (!empty($row['distribution_datetime']) ? htmlspecialchars($row['distribution_datetime']) : 'N/A') . "</td>";
-                        echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
-                        echo "<td class='received-items'>" . (!empty($row['received_items']) ? htmlspecialchars($row['received_items']) : 'No supplies received') . "</td>";
-                        echo "</tr>";
-                    }
-                } else {
-                    echo "<tr><td colspan='4' class='no-record'>No assistance history found for received status.</td></tr>";
-                }
+                            if ($result->num_rows > 0) {
+                                while ($row = $result->fetch_assoc()) {
+                                    echo "<tr>";
+                                    echo "<td>" . htmlspecialchars($row['fullname']) . "</td>";
+                                    echo "<td>" . (!empty($row['distribution_datetime']) ? htmlspecialchars($row['distribution_datetime']) : 'N/A') . "</td>";
+                                    echo "<td>" . htmlspecialchars($row['assistance_status']) . "</td>";
+                                    echo "<td class='received-items'>" . (!empty($row['received_items']) ? htmlspecialchars($row['received_items']) : 'No supplies received') . "</td>";
+                                    echo "</tr>";
+                                }
+                            } else {
+                                echo "<tr><td colspan='4' class='no-record'>No assistance history found for received status.</td></tr>";
+                            }
 
-                $conn->close();
-                ?>
-            </tbody>
-        </table>
+                            $conn->close();
+                            ?>
+                        </tbody>
+                    </table>
 
-        <!-- Pagination Controls -->
-        <div id="paginationControls"></div>
-    </div>
-</section>
-
+                    <!-- Pagination Controls -->
+                    <div id="paginationControls"></div>
+                </div>
+            </section>
+            <!-- Logout Confirmation Modal -->
+            <div id="logout-modal-custom" class="modal-custom">
+                <div class="modal-content-custom">
+                    <span class="close-custom">&times;</span>
+                    <h2>Are you sure you want to logout?</h2>
+                    <button id="confirm-logout-custom" class="btn-custom">Yes</button>
+                    <button id="cancel-logout-custom" class="btn-custom-no">No</button>
+                </div>
+            </div>
         </main>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-            // Notification Dropdown
-            const notificationBell = document.getElementById('notification-bell');
-            const notificationDropdown = document.getElementById('notification-dropdown');
-            if (notificationBell) {
-                notificationBell.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    notificationDropdown.classList.toggle('show');
+                // Notification Dropdown
+                const notificationBell = document.getElementById('notification-bell');
+                const notificationDropdown = document.getElementById('notification-dropdown');
+                if (notificationBell) {
+                    notificationBell.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        notificationDropdown.classList.toggle('show');
 
-                    // Close profile menu if open
-                    const profileMenu = document.getElementById('profile-menu');
-                    if (profileMenu && profileMenu.classList.contains('show')) {
-                        profileMenu.classList.remove('show');
+                        // Close profile menu if open
+                        const profileMenu = document.getElementById('profile-menu');
+                        if (profileMenu && profileMenu.classList.contains('show')) {
+                            profileMenu.classList.remove('show');
+                        }
+                    });
+                }
+
+                // Profile Dropdown
+                const profileDropdown = document.getElementById('profile-dropdown');
+                const profileMenu = document.getElementById('profile-menu');
+                if (profileDropdown) {
+                    profileDropdown.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        profileMenu.classList.toggle('show');
+
+                        // Close notification dropdown if open
+                        if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                            notificationDropdown.classList.remove('show');
+                        }
+                    });
+                }
+
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', function() {
+                    if (notificationDropdown) notificationDropdown.classList.remove('show');
+                    if (profileMenu) profileMenu.classList.remove('show');
+                });
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const table = document.getElementById("assistanceHistoryTable");
+                const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+                const searchBar = document.getElementById("searchBar");
+                const paginationControls = document.getElementById("paginationControls");
+                const rowsPerPage = 5; // Change this number to adjust the number of rows per page
+                let currentPage = 1;
+
+                // Pagination Functionality
+                function displayPage(page) {
+                    const startIndex = (page - 1) * rowsPerPage;
+                    const endIndex = page * rowsPerPage;
+
+                    for (let i = 0; i < rows.length; i++) {
+                        rows[i].style.display = i >= startIndex && i < endIndex ? "" : "none";
+                    }
+
+                    // Update pagination controls
+                    updatePaginationControls();
+                }
+
+                function updatePaginationControls() {
+                    const totalPages = Math.ceil(rows.length / rowsPerPage);
+                    paginationControls.innerHTML = ""; // Clear existing controls
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const pageButton = document.createElement("button");
+                        pageButton.textContent = i;
+                        pageButton.className = i === currentPage ? "active" : ""; // Add active class to the current page
+                        pageButton.addEventListener("click", function() {
+                            currentPage = i;
+                            displayPage(i);
+                        });
+                        paginationControls.appendChild(pageButton);
+                    }
+                }
+
+                // Search Functionality
+                searchBar.addEventListener("input", function() {
+                    const filter = searchBar.value.toLowerCase();
+                    let visibleRowCount = 0;
+
+                    for (let i = 0; i < rows.length; i++) {
+                        const rowText = rows[i].textContent.toLowerCase();
+                        if (rowText.includes(filter)) {
+                            rows[i].style.display = ""; // Show the row
+                            visibleRowCount++;
+                        } else {
+                            rows[i].style.display = "none"; // Hide the row
+                        }
+                    }
+
+                    // Update pagination after filtering
+                    if (filter === "") {
+                        currentPage = 1; // Reset to page 1 if search is cleared
+                        displayPage(1);
+                    } else {
+                        currentPage = 1; // Reset to page 1 after filtering
+                        updatePaginationControls();
                     }
                 });
-            }
 
-            // Profile Dropdown
-            const profileDropdown = document.getElementById('profile-dropdown');
-            const profileMenu = document.getElementById('profile-menu');
-            if (profileDropdown) {
-                profileDropdown.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileMenu.classList.toggle('show');
+                // Initial Setup: Display the first page
+                displayPage(currentPage);
+            });
 
-                    // Close notification dropdown if open
-                    if (notificationDropdown && notificationDropdown.classList.contains('show')) {
-                        notificationDropdown.classList.remove('show');
-                    }
+            document.addEventListener("DOMContentLoaded", function() {
+                // Dropdown behavior for Account Control Panel
+                const accountDropdownToggle = document.querySelector(".arrow-dropdown-toggle");
+                const accountDropdownParent = document.querySelector(".arrow-dropdown");
+                const assistanceDropdwonParent = document.querySelector(".arrow-dropdown-assistance");
+
+                if (accountDropdownParent && window.location.pathname.includes("/account_control")) {
+                    accountDropdownParent.classList.add("active");
+                } else {
+                    assistanceDropdwonParent.classList.add("active");
+                }
+
+                if (accountDropdownToggle) {
+                    accountDropdownToggle.addEventListener("click", function() {
+                        const parent = this.closest(".arrow-dropdown-account");
+                        parent.classList.toggle("active");
+                    });
+                }
+
+                // Dropdown behavior for Assistance Scheduling
+                const assistanceDropdownToggle = document.querySelector(".arrow-dropdown-toggle-assistance");
+                if (assistanceDropdownToggle) {
+                    assistanceDropdownToggle.addEventListener("click", function() {
+                        const parent = this.closest(".arrow-dropdown-assistance");
+                        parent.classList.toggle("active");
+                    });
+                }
+            });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const logoutLink = document.getElementById("logout-link-custom"); // Link that triggers the logout modal
+                const logoutModal = document.getElementById("logout-modal-custom"); // Modal element
+                const confirmLogout = document.getElementById("confirm-logout-custom"); // Confirm button
+                const cancelLogout = document.getElementById("cancel-logout-custom"); // Cancel button
+                const closeSpan = logoutModal.querySelector(".close-custom"); // Close button (X)
+
+                // Function to open the modal
+                const openModal = () => {
+                    logoutModal.style.display = "block";
+                    document.body.style.overflow = "hidden"; // Disable background scroll
+                };
+
+                // Function to close the modal
+                const closeModal = () => {
+                    logoutModal.style.display = "none";
+                    document.body.style.overflow = "auto"; // Enable background scroll
+                };
+
+                // Event listener to open the modal
+                logoutLink?.addEventListener("click", (e) => {
+                    e.preventDefault(); // Prevent navigation
+                    openModal();
                 });
-            }
 
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function() {
-                if (notificationDropdown) notificationDropdown.classList.remove('show');
-                if (profileMenu) profileMenu.classList.remove('show');
+                // Event listener for confirm logout
+                confirmLogout?.addEventListener("click", () => {
+                    window.location.href = logoutLink.href; // Redirect to logout
+                });
+
+                // Event listeners to close the modal
+                cancelLogout?.addEventListener("click", closeModal);
+                closeSpan?.addEventListener("click", closeModal);
+                window.addEventListener("click", (e) => {
+                    if (e.target === logoutModal) closeModal(); // Close if clicking outside modal
+                });
             });
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-    const table = document.getElementById("assistanceHistoryTable");
-    const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    const searchBar = document.getElementById("searchBar");
-    const paginationControls = document.getElementById("paginationControls");
-    const rowsPerPage = 5;  // Change this number to adjust the number of rows per page
-    let currentPage = 1;
-
-    // Pagination Functionality
-    function displayPage(page) {
-        const startIndex = (page - 1) * rowsPerPage;
-        const endIndex = page * rowsPerPage;
-
-        for (let i = 0; i < rows.length; i++) {
-            rows[i].style.display = i >= startIndex && i < endIndex ? "" : "none";
-        }
-
-        // Update pagination controls
-        updatePaginationControls();
-    }
-
-    function updatePaginationControls() {
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-        paginationControls.innerHTML = "";  // Clear existing controls
-
-        for (let i = 1; i <= totalPages; i++) {
-            const pageButton = document.createElement("button");
-            pageButton.textContent = i;
-            pageButton.className = i === currentPage ? "active" : "";  // Add active class to the current page
-            pageButton.addEventListener("click", function () {
-                currentPage = i;
-                displayPage(i);
-            });
-            paginationControls.appendChild(pageButton);
-        }
-    }
-
-    // Search Functionality
-    searchBar.addEventListener("input", function () {
-        const filter = searchBar.value.toLowerCase();
-        let visibleRowCount = 0;
-
-        for (let i = 0; i < rows.length; i++) {
-            const rowText = rows[i].textContent.toLowerCase();
-            if (rowText.includes(filter)) {
-                rows[i].style.display = "";  // Show the row
-                visibleRowCount++;
-            } else {
-                rows[i].style.display = "none";  // Hide the row
-            }
-        }
-
-        // Update pagination after filtering
-        if (filter === "") {
-            currentPage = 1;  // Reset to page 1 if search is cleared
-            displayPage(1);
-        } else {
-            currentPage = 1;  // Reset to page 1 after filtering
-            updatePaginationControls();
-        }
-    });
-
-    // Initial Setup: Display the first page
-    displayPage(currentPage);
-});
         </script>
 </body>
 

@@ -13,6 +13,9 @@ require 'db_connect.php'; ?>
     <link rel="stylesheet" href="css/admin-dashboard.css"> <!-- Updated link -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <style>
         .notification-bell {
             position: relative;
@@ -63,67 +66,9 @@ require 'db_connect.php'; ?>
             display: none;
         }
 
-        .modal-search {
 
-            /* Hidden by default */
-            position: fixed;
-            z-index: 1;
-            /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-            /* Black w/ opacity */
-        }
 
-        .modal-search-content {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
 
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 50%;
-
-            padding: 20px;
-            width: 400px;
-            border-radius: 8px;
-        }
-
-        .modal-close {
-            align-self: flex-end;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        #residentSearch {
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #residentSearchResults {
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
-
-        #residentSearchResults div {
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        #residentSearchResults div:hover {
-            background: #f0f0f0;
-        }
 
         .table-header {
             display: flex;
@@ -252,7 +197,7 @@ require 'db_connect.php'; ?>
                                 <i class="fas fa-envelope-open"></i>
                                 <span>Inbox</span>
                             </a>
-                            <a href="login.php" id="logout-link" class="dropdown-item">
+                            <a href="login.php" id="logout-link-custom" class="dropdown-item">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>
@@ -353,7 +298,7 @@ require 'db_connect.php'; ?>
                 <label for="distributionDate">Distribution Date/Time:</label>
                 <input type="datetime-local" id="distributionDate" name="distribution_date" required>
 
-                <h4>Supplies:</h4>
+                <h4 style="margin: 0;">Supplies:</h4>
                 <div id="suppliesList">
                     <!-- Supply items with quantity input will be dynamically loaded here -->
                 </div>
@@ -383,7 +328,7 @@ require 'db_connect.php'; ?>
                 <label for="editDistributionDate">Distribution Date/Time:</label>
                 <input type="datetime-local" id="editDistributionDate" name="distribution_date" required />
 
-                <h4>Supplies:</h4>
+                <h4 style="margin: 0;">Supplies:</h4>
                 <div id="editSuppliesList">
                     <!-- Supplies will be dynamically loaded -->
                 </div>
@@ -427,14 +372,15 @@ require 'db_connect.php'; ?>
     </div>
 
     <!-- Logout Confirmation Modal -->
-    <div id="logout-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
+    <div id="logout-modal-custom" class="modal-custom">
+        <div class="modal-content-custom">
+            <span class="close-custom">&times;</span>
             <h2>Are you sure you want to logout?</h2>
-            <button id="confirm-logout" class="btn">Yes</button>
-            <button id="cancel-logout" class="btn">No</button>
+            <button id="confirm-logout-custom" class="btn-custom">Yes</button>
+            <button id="cancel-logout-custom" class="btn-custom-no">No</button>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.2/dist/sweetalert2.min.js"></script>
     <script src="js/admin-dashboard.js"></script>
@@ -648,7 +594,7 @@ require 'db_connect.php'; ?>
                                 supplyDiv.classList.add('supply-item');
 
                                 const label = document.createElement('label');
-                                label.textContent = `${supply.name} (Available: ${supply.quantity} ${supply.unit})`;
+                                label.textContent = `${supply.name} (stocks: ${supply.quantity} ${supply.unit})`;
                                 supplyDiv.appendChild(label);
 
                                 const input = document.createElement('input');
@@ -706,7 +652,7 @@ require 'db_connect.php'; ?>
                                 supplyDiv.classList.add("supply-item");
 
                                 const label = document.createElement("label");
-                                label.textContent = `${supply.name} (Available: ${supply.available} ${supply.unit})`;
+                                label.textContent = `${supply.name} (stocks: ${supply.available} ${supply.unit})`;
                                 supplyDiv.appendChild(label);
 
                                 const input = document.createElement("input");
@@ -913,11 +859,11 @@ require 'db_connect.php'; ?>
         });
 
         document.addEventListener("DOMContentLoaded", () => {
-            const logoutLink = document.getElementById("logout-link"); // Link that triggers the logout modal
-            const logoutModal = document.getElementById("logout-modal"); // Modal element
-            const confirmLogout = document.getElementById("confirm-logout"); // Confirm button
-            const cancelLogout = document.getElementById("cancel-logout"); // Cancel button
-            const closeSpan = logoutModal.querySelector(".close"); // Close button (X)
+            const logoutLink = document.getElementById("logout-link-custom"); // Link that triggers the logout modal
+            const logoutModal = document.getElementById("logout-modal-custom"); // Modal element
+            const confirmLogout = document.getElementById("confirm-logout-custom"); // Confirm button
+            const cancelLogout = document.getElementById("cancel-logout-custom"); // Cancel button
+            const closeSpan = logoutModal.querySelector(".close-custom"); // Close button (X)
 
             // Function to open the modal
             const openModal = () => {
